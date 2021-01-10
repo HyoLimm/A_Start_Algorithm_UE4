@@ -8,25 +8,25 @@
 
 #define LOCTEXT_NAMESPACE "PuzzleBlockGrid"
 
-AA_Star_AlgorithmBlockGrid::AA_Star_AlgorithmBlockGrid(){
+AA_Star_AlgorithmBlockGrid::AA_Star_AlgorithmBlockGrid() {
 	// Create dummy root scene component
 	RootComp = CreateDefaultSubobject<USceneComponent>(TEXT("Dummy0"));
 	RootComponent = RootComp;
 
 	// Set defaults
-	GridSize = 20; 
-	BlockSpacing = 300.f; // »çÀÌ °£°İ
-	
-	//ÃÊ±âÈ­
+	GridSize = 20;
+	BlockSpacing = 300.f; // ì‚¬ì´ ê°„ê²©
+
+	//ì´ˆê¸°í™”
 	bAllowDiagonal = false;
 	bdontCrossCorner = false;
 	MovingTime = 0.1f;
-	Cur_PathCountNum=0;
+	Cur_PathCountNum = 0;
 	//Set Null
-	Cur_StartBlock=nullptr;
-	Cur_TargetBlock=nullptr;
+	Cur_StartBlock = nullptr;
+	Cur_TargetBlock = nullptr;
 
-	//±æÃ£±â¿ë ¹æÇâ
+	//ê¸¸ì°¾ê¸°ìš© ë°©í–¥
 	DirectionInfo[0] = FVector2D(1, 0);	//up
 	DirectionInfo[1] = FVector2D(0, 1); //right
 	DirectionInfo[2] = FVector2D(-1, 0); //down 
@@ -36,216 +36,222 @@ AA_Star_AlgorithmBlockGrid::AA_Star_AlgorithmBlockGrid(){
 }//end of AA_Star_AlgorithmBlockGrid();
 
 
-void AA_Star_AlgorithmBlockGrid::BeginPlay(){
+void AA_Star_AlgorithmBlockGrid::BeginPlay() {
 	Super::BeginPlay();
-	//ºí·Ï »ı¼º
-	SpawnBlocks();	
+	//ë¸”ë¡ ìƒì„±
+	SpawnBlocks();
 
 }//end of BeginPlay()
 
 
-//¿¹¿Ü »óÈ² °Ë»ç-¿©±â¼­ false·Î ¸®ÅÏÀÌ¶ó¸é °æ·Î¿¡ ÀûÇÕÇÏÁö ¾Ê´Ù´Â¶æ
-bool AA_Star_AlgorithmBlockGrid::CheckException(FVector2D p_CheckPosition){
-	const int X=p_CheckPosition.X;
-	const int Y=p_CheckPosition.Y;
+//ë‹¤ìŒ ìœ„ì¹˜ ì˜ˆì™¸ ìƒí™© ê²€ì‚¬-ì—¬ê¸°ì„œ falseë¡œ ë¦¬í„´ì´ë¼ë©´ ê²½ë¡œì— ì í•©í•˜ì§€ ì•Šë‹¤ëŠ”ëœ»
+bool AA_Star_AlgorithmBlockGrid::CheckException(FVector2D p_CheckPosition)
+{
+	const int X = p_CheckPosition.X;
+	const int Y = p_CheckPosition.Y;
 
-	//X_Á¤ÇØÁø ¹üÀ§ ÀÌ³» ( 0ÀÌÇÏ°Å³ª GridSize ÀÌ»ó)
-	if (X < 0 || X >= GridSize)
-		return false;
-	
-	//Y_Á¤ÇØÁø ¹üÀ§ ÀÌ³» ( 0ÀÌÇÏ°Å³ª GridSize ÀÌ»ó)
-	if (Y < 0 || Y >= GridSize) 
-		return false;
+	//X_ì •í•´ì§„ ë²”ìœ„ ì´ë‚´ ( 0 ë¯¸ë§Œê±°ë‚˜ GridSize ì´ìƒ)
+	if (X < 0 || X >= GridSize || Y < 0 || Y >= GridSize)	return false;
 
-	//ÀÌ¹Ì CloseList¿¡ Æ÷ÇÔµÇ¾îÀÖ´Ù¸é ¸®ÅÏ
-	if ((ClosedList.Contains(&NodeArray[X][Y])))
-		return false;
+	//ì´ë¯¸ CloseListì— í¬í•¨ë˜ì–´ìˆë‹¤ë©´ ë¦¬í„´
+	if ((ClosedList.Contains(&NodeArray[X][Y]))) return false;
 
-	//º®ÀÌ¶ó¸é ¸®ÅÏ
-	if (NodeArray[X][Y].GetIsWall()) 
-		return false;	
+	//ë²½ì´ë¼ë©´ ë¦¬í„´
+	if (NodeArray[X][Y].GetIsWall()) return false;
 
 	return true;
 }//end of CheckException
 
-//½ÃÀÛ ºí·ÏÁöÁ¤
-void AA_Star_AlgorithmBlockGrid::SelectStartBlock(class AA_Star_AlgorithmBlock * p_StartingBlock){
+//ì‹œì‘ ë¸”ë¡ì§€ì •
+void AA_Star_AlgorithmBlockGrid::SelectStartBlock(class AA_Star_AlgorithmBlock * p_StartingBlock)
+{
 	//Check StartBlock
-	if(Cur_StartBlock!=nullptr) return;
+	if (Cur_StartBlock != nullptr) return;
 
-	Cur_StartBlock=p_StartingBlock;
-}
+	Cur_StartBlock = p_StartingBlock;
+}//End of SelectStartBlock
 
-void AA_Star_AlgorithmBlockGrid::SelectTargetBlock(class AA_Star_AlgorithmBlock * p_TargetingBlock){
+void AA_Star_AlgorithmBlockGrid::SelectTargetBlock(class AA_Star_AlgorithmBlock * p_TargetingBlock)
+{
 	//Check TargetBlock
 	if (Cur_TargetBlock != nullptr) return;
 
-	Cur_TargetBlock=p_TargetingBlock;
-	
+	Cur_TargetBlock = p_TargetingBlock;
 
-	if (Cur_StartBlock == nullptr || Cur_TargetBlock == nullptr)	return;
+	if (Cur_StartBlock == nullptr || Cur_TargetBlock == nullptr)	return;  //ë¸”ë¡ ì§€ì • í™•ì¸
 
 
-	//±æ Àç±Í Ã£±â ½ÃÀÛ //±æ Àç±Í Ã£±â ÇÔ¼ö Å»¶ô -> ºñÈ¿À²ÀûÀÓ	
+	//ê¸¸ ì¬ê·€ ì°¾ê¸° ì‹œì‘ //ê¸¸ ì¬ê·€ ì°¾ê¸° í•¨ìˆ˜ íƒˆë½ -> ë¹„íš¨ìœ¨ì ì„	
 	//CharacterPath=GetPath_Recursive(StartBlock->GetBlockNumber(), TargetBlock->GetBlockNumber());	
 
-	//Àç±Í Ã£±â´ë½Å »ç¿ëÇÏ´Â ¿ì¼±¼øÀ§ Å¥ »ç¿ë 
-	//±æ while Ã£±â ½ÃÀÛÇÏ¿© CharacterPath¿¡ °æ·Î ÀúÀå->Àç±Í ÇÔ¼ö´ë½Å Ã¤ÅÃ
-	CharacterPath=GetPath_While(Cur_StartBlock->GetBlockNumber(), Cur_TargetBlock->GetBlockNumber());
+	//ì¬ê·€ ì°¾ê¸°ëŒ€ì‹  A* ì•Œê³ ë¦¬ì¦˜
+	//ê¸¸ while ì°¾ê¸° ì‹œì‘í•˜ì—¬ CharacterPathì— ê²½ë¡œ ì €ì¥->ì¬ê·€ í•¨ìˆ˜ëŒ€ì‹  ì±„íƒ
+	CharacterPath = GetPath_While(Cur_StartBlock->GetBlockNumber(), Cur_TargetBlock->GetBlockNumber());
 
-	//°æ·Î¸¦ Ã£Áö ¸øÇØ¼­ ½ÇÆĞ ÇßÀ»¶§ (0ÀÌÇÏÀÏ‹š)
-	if(CharacterPath.Num()<=0){
+	//ê²½ë¡œë¥¼ ì°¾ì§€ ëª»í•´ì„œ ì‹¤íŒ¨ í–ˆì„ë•Œ (0ì´í•˜)
+	if (CharacterPath.Num() <= 0)
+	{
 		UE_LOG(LogTemp, Warning, TEXT("Not Found Path"));
 		return;
 	}
-		
-	//Å¸ÀÌ¸Ó ÃÊ±âÈ­ ÈÄ DrawÁøÇà
-	Cur_PathCountNum= 1; //1ºÎÅÍ ½ÃÀÛÇÏ´Â ÀÌÀ¯´Â ½ÃÀÛÁöÁ¡À» Á¦¿ÜÇÑ 1¹ø ±æºÎÅÍ Ãâ·ÂµÇ±â À§ÇÔ. 
-	GetWorldTimerManager().SetTimer(CountdownTimerHandle,this,&AA_Star_AlgorithmBlockGrid::MovingTimer, MovingTime,true);
-	
+
+	//íƒ€ì´ë¨¸ ì´ˆê¸°í™” í›„ Drawì§„í–‰
+	Cur_PathCountNum = 1; //1ë¶€í„° ì‹œì‘í•˜ëŠ” ì´ìœ ëŠ” ì‹œì‘ì§€ì ì„ ì œì™¸í•œ 1ë²ˆ ê¸¸ë¶€í„° ì¶œë ¥ë˜ê¸° ìœ„í•¨. 
+	GetWorldTimerManager().SetTimer(CountdownTimerHandle, this, &AA_Star_AlgorithmBlockGrid::MovingTimer, MovingTime, true);
+
 }//end of SelectTargetBlock
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-//ÇöÀç À§Ä¡°¡ ¸ñÇ¥ÁöÁ¡ÀÎÁö?
-bool AA_Star_AlgorithmBlockGrid::GetArriveTarget(FVector2D p_CurrentPoistion, FVector2D p_TargetPosition){	
+bool AA_Star_AlgorithmBlockGrid::GetArriveTarget(FVector2D p_CurrentPoistion, FVector2D p_TargetPosition)
+{
+	//í˜„ì¬ ìœ„ì¹˜ê°€ ëª©í‘œì§€ì ì¸ì§€
 	return (p_CurrentPoistion.X == p_TargetPosition.X) && (p_CurrentPoistion.Y == p_TargetPosition.Y) ? true : false;
 }
 
-//±æÃ£±â Àç±Í ±â´É-Å»¶ô
-TArray<FVector2D> AA_Star_AlgorithmBlockGrid::GetPath_Recursive(FVector2D p_StartPosition, FVector2D p_TargetPosition){
-	//¸®½ºÆ® ÃÊ±âÈ­
+//ê¸¸ì°¾ê¸° ì¬ê·€ ê¸°ëŠ¥-íƒˆë½
+TArray<FVector2D> AA_Star_AlgorithmBlockGrid::GetPath_Recursive(FVector2D p_StartPosition, FVector2D p_TargetPosition)
+{
+	//ë¦¬ìŠ¤íŠ¸ ì´ˆê¸°í™”
 	this->SetRelease();
-
-	//¿¹¿Ü»óÈ² È®ÀÎ
+	//ì˜ˆì™¸ìƒí™© í™•ì¸
 	if (!CheckException(p_TargetPosition)) 	return FinalPathList;
 
-	//Á¤»óÀûÀÎ Á¶°Ç¿¡¼­ Å½»ö ½ÃÀÛ
-	//Ã³À½ ½ÃÀÛÀÌ¹Ç·Î Ã¹ ½ÃÀÛÁöÁ¡ÀÌ ºÎ¸ğ ³ëµå°¡ ‰Î.
-	Node_Info * First_ParentNode = new Node_Info(p_StartPosition,nullptr,0,p_TargetPosition);
+	//ì •ìƒì ì¸ ì¡°ê±´ì—ì„œ íƒìƒ‰ ì‹œì‘
+	//ì²˜ìŒ ì‹œì‘ì´ë¯€ë¡œ ì²« ì‹œì‘ì§€ì ì´ ë¶€ëª¨ ë…¸ë“œê°€ Â‰.
+	Node_Info * First_ParentNode = new Node_Info(p_StartPosition, nullptr, 0, p_TargetPosition);
 
-	/*Ã¹¹øÂ° ¼±ÅÃ ³ëµå ClosedList¿¡ »ğÀÔ*/
-	ClosedList.Push(First_ParentNode);	
+	/*ì²«ë²ˆì§¸ ì„ íƒ ë…¸ë“œ ClosedListì— ì‚½ì…*/
+	ClosedList.Push(First_ParentNode);
 
-	/*±æÃ£±â ½ÃÀÛ*/	
-	Node_Info * Finded_Path=Recursive_FindPath(First_ParentNode,p_TargetPosition);
+	/*ê¸¸ì°¾ê¸° ì‹œì‘*/
+	Node_Info * Finded_Path = Recursive_FindPath(First_ParentNode, p_TargetPosition);
 
-
-	/*ÃÖÁ¾ ¸®½ºÆ®¿¡ Ã£Àº °æ·Î´ë·Î ³Ö¾îÁÜ*/
-	while (Finded_Path->GetParent()!=nullptr){
-		FinalPathList.Push(Finded_Path->GetPoistion());	 //ÃÖÁ¾°æ·Î¿¡ Ã£Àº °æ·Î À§Ä¡ ³Ö±â
-		Finded_Path= Finded_Path->GetParent();
+	/*ìµœì¢… ë¦¬ìŠ¤íŠ¸ì— ì°¾ì€ ê²½ë¡œëŒ€ë¡œ ë„£ì–´ì¤Œ*/
+	while (Finded_Path->GetParent() != nullptr)
+	{
+		FinalPathList.Push(Finded_Path->GetPoistion());	 //ìµœì¢…ê²½ë¡œì— ì°¾ì€ ê²½ë¡œ ìœ„ì¹˜ ë„£ê¸°
+		Finded_Path = Finded_Path->GetParent();
 	}
 
-	/*ÃÖÁ¾ ¸®½ºÆ® ¿ªÀ¸·Î µÚÁı¾îÁÜ*/
+	/*ìµœì¢… ë¦¬ìŠ¤íŠ¸ ì—­ìœ¼ë¡œ ë’¤ì§‘ì–´ì¤Œ*/
 	ReverseArray();
 
-	/*ÃÖÁ¾ °æ·Î ¸®ÅÏ*/
+	/*ìµœì¢… ê²½ë¡œ ë¦¬í„´*/
 	return FinalPathList;
-
 }//end of GetPath
 
-//(Àç±Í¿ë)ÇöÀç ³ÖÀ¸·Á´Â ³ëµå°¡ ¿ÀÇÂ¸®½ºÆ®¿¡ ÀÖ´ÂÁö °Ë»ç-Å»¶ô
-void AA_Star_AlgorithmBlockGrid::AddOpenList(Node_Info* p_CheckNode) {
+//(ì¬ê·€ìš©)í˜„ì¬ ë„£ìœ¼ë ¤ëŠ” ë…¸ë“œê°€ ì˜¤í”ˆë¦¬ìŠ¤íŠ¸ì— ìˆëŠ”ì§€ ê²€ì‚¬-íƒˆë½
+void AA_Star_AlgorithmBlockGrid::AddOpenList(Node_Info* p_CheckNode)
+{
 	for (auto it : ClosedList) {
-		if (GetArriveTarget(it->GetPoistion(), p_CheckNode->GetPoistion())) {
+		if (GetArriveTarget(it->GetPoistion(), p_CheckNode->GetPoistion()))
+		{
 			return;
 		}
 	}
-	for (auto it : OpenList) {
-		if (GetArriveTarget(it->GetPoistion(), p_CheckNode->GetPoistion())) {
-			if (it->GetCostF() > p_CheckNode->GetCostF()) {
+	for (auto it : OpenList)
+	{
+		if (GetArriveTarget(it->GetPoistion(), p_CheckNode->GetPoistion()))
+		{
+			if (it->GetCostF() > p_CheckNode->GetCostF())
+			{
 				OpenList.Remove(it);
 				OpenList.Push(p_CheckNode);
 				return;
 			}
 		}
 	}
-
 	OpenList.Push(p_CheckNode);
 }//end of AddOpenList
 
-//Àç±Í - Å»¶ô
-Node_Info * AA_Star_AlgorithmBlockGrid::Recursive_FindPath(Node_Info* p_Parent, FVector2D p_Target) {
+//ì¬ê·€ - íƒˆë½
+Node_Info * AA_Star_AlgorithmBlockGrid::Recursive_FindPath(Node_Info* p_Parent, FVector2D p_Target)
+{
+	if (GetArriveTarget(p_Parent->GetPoistion(), p_Target)) return p_Parent;	/*ë¶€ëª¨ ë…¸ë“œ ë„ì°©ì—¬ë¶€ í™•ì¸*/
 
-	/*ºÎ¸ğ ³ëµå µµÂø¿©ºÎ È®ÀÎ*/
-	if (GetArriveTarget(p_Parent->GetPoistion(), p_Target)) return p_Parent;
-
-	for (int i = 0; i < 4; i++) {
+	for (int i = 0; i < 4; i++)
+	{
 		FVector2D _ChildPosition = p_Parent->GetPoistion() + DirectionInfo[i];
-		if (CheckException(_ChildPosition)) {
+
+		if (CheckException(_ChildPosition))
+		{
 			Node_Info * _Child = new Node_Info(_ChildPosition, p_Parent, p_Parent->GetCostG() + 1, p_Target);
 			AddOpenList(_Child);
 		}
 	}
 
-
-	if (OpenList[0] == nullptr) {
+	if (OpenList[0] == nullptr)
+	{
 		UE_LOG(LogTemp, Warning, TEXT("NotValid_Recursive_Path"));
 		return p_Parent;
 	}
+
 	Node_Info * BestNode = OpenList[0];
 
-	for (auto it : OpenList) {
-		if (BestNode->GetCostF() >= it->GetCostF()) {
+	for (auto it : OpenList)
+	{
+		if (BestNode->GetCostF() >= it->GetCostF())
+		{
 			BestNode = it;
 		}
 	}
 
 	OpenList.Remove(BestNode);
-
 	ClosedList.Push(BestNode);
-
 	return Recursive_FindPath(BestNode, p_Target);
 }
 
-TArray<FVector2D> AA_Star_AlgorithmBlockGrid::GetPath_While(FVector2D p_Startposition, FVector2D p_TargetPosition){
-	//¸®½ºÆ® ÃÊ±âÈ­
+TArray<FVector2D> AA_Star_AlgorithmBlockGrid::GetPath_While(FVector2D p_Startposition, FVector2D p_TargetPosition)
+{
+	//ë¦¬ìŠ¤íŠ¸ ì´ˆê¸°í™”
 	this->SetRelease();
-
-	//¿ÀÇÂ¸®½ºÆ®¿¡ ½ÃÀÛÁ¡ ³ëµå ³Ö¾îÁÜ/ ºÎ¸ğ null/ºñ¿ë 0 
+	//ì˜¤í”ˆë¦¬ìŠ¤íŠ¸ì— ì‹œì‘ì  ë…¸ë“œ ë„£ì–´ì¤Œ/ ë¶€ëª¨ null/ë¹„ìš© 0 
 	OpenList.Push(new Node_Info(p_Startposition, nullptr, 0, p_TargetPosition));
 
- 	while (OpenList.Num()>0){
-		CurrentNode=OpenList[0]; //¿ÀÇÂ¸®½ºÆ®ÀÇ Ã¹¹øÂ° ÀÖ´Â°É ÇöÀç ³ëµå·Î ´ëÀÔ
+	while (OpenList.Num() > 0)
+	{
+		CurrentNode = OpenList[0]; //ì˜¤í”ˆë¦¬ìŠ¤íŠ¸ì˜ ì²«ë²ˆì§¸ ìˆëŠ”ê±¸ í˜„ì¬ ë…¸ë“œë¡œ ëŒ€ì…
 
-		//*F=>½ÃÀÛºÎÅÍ Áö±İ±îÁö °Å¸®+¸ñÇ¥±îÁöÀÇ °Å¸® Àı´ë°ª
-		//¿­¸° ¸®½ºÆ® Áß °¡Àå F°¡ ÀÛ°Å³ª °°°í, H°¡ ÀÛÀº °É 
-		 //ÇöÀç³ëµå·Î ÇÏ°í ¿­¸°¸®½ºÆ®¿¡¼­ ´İÈù¸®½ºÆ®·Î ¿Å±â±â
-		int maxNumber=OpenList.Num();
-		for (int i = 0; i < maxNumber; i++) {
-			if (OpenList[i]->GetCostF() <= CurrentNode->GetCostF() &&
-																	OpenList[i]->GetCostH() < CurrentNode->GetCostH()) {
-				CurrentNode=OpenList[i];
+		//Fê°’? ì‹œì‘ë¶€í„° í˜„ì¬ê¹Œì§€ ê±°ë¦¬+ ë‚¨ì€ ëª©í‘œ ê¹Œì§€ì˜ ê±°ë¦¬ ì ˆëŒ“ê°’
+		//ì—´ë¦° ë¦¬ìŠ¤íŠ¸ ì¤‘ ê°€ì¥ Fê°€ ì‘ê±°ë‚˜ ê°™ê³ , Hê°€ ì‘ì€ ê±¸ 
+		 //í˜„ì¬ë…¸ë“œë¡œ í•˜ê³  ì—´ë¦°ë¦¬ìŠ¤íŠ¸ì—ì„œ ë‹«íŒë¦¬ìŠ¤íŠ¸ë¡œ ì˜®ê¸°ê¸°
+		int maxNumber = OpenList.Num();
+		for (int i = 0; i < maxNumber; i++)
+		{
+			if ((OpenList[i]->GetCostF() <= CurrentNode->GetCostF()) && (OpenList[i]->GetCostH() < CurrentNode->GetCostH()))
+			{
+				CurrentNode = OpenList[i];
 				CurrentNode->SetCurBlock(OpenList[i]->GetCurBlock());
 			}
-		}//end of for
-
-		//ÇöÀç ³ëµå ¿ÀÇÂ¸®½ºÆ®¿¡¼­ Áö¿ì°í
-		OpenList.Remove(CurrentNode);
-		//´İÈù ³ëµå¿¡ »ğÀÔ
-		ClosedList.Push(CurrentNode);
-
-
-		//ÇöÀç ³ëµå À§Ä¡°¡ µµÂø À§Ä¡¶û °°ÀºÁö? °°´Ù¸é return Á¾·á
-		if (GetArriveTarget(CurrentNode->GetPoistion(), p_TargetPosition)){
-			const int x=p_TargetPosition.X;
-			const int y=p_TargetPosition.Y;
-			Node_Info *  TargetCurrent_node = &NodeArray[x][y]; //¸ñÇ¥ÁöÁ¡ÀÇ ³ëµå Á¤º¸ 
-			while (TargetCurrent_node->GetPoistion() != p_Startposition){
-				FinalPathList.Push(TargetCurrent_node->GetPoistion()); //ÃÖÁ¾°æ·Î¿¡ ¸ñÇ¥ÁöÁ¡ºÎÅÍ pushÇÔ (ÃßÈÄ¿¡ ¿ªÀ¸·Î µÚÁıÀ½)
-				TargetCurrent_node = TargetCurrent_node->GetParent(); //ÇØ´ç ³ëµåÀÇ ºÎ¸ğ³ëµå¸¦ °¡Á®¿È( ´ÙÀ½ °¥ ±æÀ» °¡Á®¿È)
-			}
-
-			FinalPathList.Push(p_Startposition);
-
-			//¹è¿­ ¿ªÀ¸·Î µÚÁı±â º¸Åä List¿´´Ù¸é °£´ÜÇÏ°Ô ÇßÀ»ÅÙµ¥, TArray»ç¿ëÀ¸·Î ÀÎÇØ µû·Î ¸¸µé¾îÁÜ
-			ReverseArray();
-
-			return FinalPathList;
 		}
 
-		//´ë°¢¼±¹æÇâ ¢Ö¢Ù¢×¢Ø
-		if (bAllowDiagonal) {
+		OpenList.Remove(CurrentNode);//í˜„ì¬ ë…¸ë“œ ì˜¤í”ˆë¦¬ìŠ¤íŠ¸ ì§€ìš°ê¸°
+		ClosedList.Push(CurrentNode);//ë‹«íŒ ë…¸ë“œì— ì‚½ì…
+
+
+		//ë„ì°©ì§€ì  í™•ì¸
+		if (GetArriveTarget(CurrentNode->GetPoistion(), p_TargetPosition))
+		{
+			const int x = p_TargetPosition.X;
+			const int y = p_TargetPosition.Y;
+			Node_Info *  TargetCurrent_node = &NodeArray[x][y]; //ëª©í‘œì§€ì ì˜ ë…¸ë“œ ì •ë³´ 
+
+			while (TargetCurrent_node->GetPoistion() != p_Startposition)
+			{
+				FinalPathList.Push(TargetCurrent_node->GetPoistion()); //ìµœì¢…ê²½ë¡œì— ëª©í‘œì§€ì ë¶€í„° push
+				TargetCurrent_node = TargetCurrent_node->GetParent(); //í•´ë‹¹ ë…¸ë“œì˜ ë¶€ëª¨ë…¸ë“œë¥¼ ê°€ì ¸ì˜´( ë‹¤ìŒ ê°ˆ ê¸¸)
+			}
+
+			FinalPathList.Push(p_Startposition); //ì²˜ìŒ ì‹œì‘ì§€ì  ë§ˆì§€ë§‰ì— ë„£ì–´ì¤Œ
+
+			ReverseArray(); //ë°°ì—´ ì—­ìœ¼ë¡œ ë’¤ì§‘ê¸° ë³´í†µ Listì˜€ë‹¤ë©´ ê°„ë‹¨í•˜ê²Œ í–ˆì„í…ë°, TArrayì‚¬ìš©ìœ¼ë¡œ ì¸í•´ ë”°ë¡œ ë§Œë“¤ì–´ì¤Œ
+
+			return FinalPathList; //í•¨ìˆ˜ ë¦¬í„´
+		}
+
+		//ëŒ€ê°ì„ ë°©í–¥ â†—â†˜â†™â†–
+		if (bAllowDiagonal)
+		{
 			OpenListAdd(CurrentNode->GetPositionX() + 1, CurrentNode->GetPositionY() + 1);
 			OpenListAdd(CurrentNode->GetPositionX() - 1, CurrentNode->GetPositionY() + 1);
 			OpenListAdd(CurrentNode->GetPositionX() - 1, CurrentNode->GetPositionY() - 1);
@@ -253,138 +259,157 @@ TArray<FVector2D> AA_Star_AlgorithmBlockGrid::GetPath_While(FVector2D p_Startpos
 		}
 
 
-		//¡è¡æ¡é¡ç ¼ø¼­ ÁøÇà
-		for (int i = 0; i < 4; i++) {
-			int x= CurrentNode->GetPositionX() + DirectionInfo[i].X;
+		//â†‘â†’â†“â† ìˆœì„œ ì§„í–‰
+		for (int i = 0; i < 4; i++)
+		{
+			int x = CurrentNode->GetPositionX() + DirectionInfo[i].X;
 			int y = CurrentNode->GetPositionY() + DirectionInfo[i].Y;
-			OpenListAdd(x,y);
+			OpenListAdd(x, y);
 		}
 
-		
+
 	}//end of while
 
-	//ÃÖÁ¾ °æ·Î ¸®ÅÏ
+	//ìµœì¢… ê²½ë¡œ ë¦¬í„´
 	return FinalPathList;
 }
 
-void AA_Star_AlgorithmBlockGrid::OpenListAdd(int p_CheckX, int p_CheckY){
+void AA_Star_AlgorithmBlockGrid::OpenListAdd(int p_CheckX, int p_CheckY)
+{
 	if (!CheckException(FVector2D(p_CheckX, p_CheckY))) return;
-	
-	//ÇØ´ç ³ëµåÀÇ º® ¿©ºÎ È®ÀÎ
-	if (bAllowDiagonal) {
-		if (NodeArray[CurrentNode->GetPositionX()][p_CheckY].GetIsWall() &&
-			NodeArray[p_CheckX][CurrentNode->GetPositionY()].GetIsWall()) {
+
+	//í•´ë‹¹ ë…¸ë“œì˜ ë²½ ì—¬ë¶€ í™•ì¸
+	if (bAllowDiagonal)
+	{
+		if (NodeArray[CurrentNode->GetPositionX()][p_CheckY].GetIsWall() && NodeArray[p_CheckX][CurrentNode->GetPositionY()].GetIsWall())
+		{
 			return;
 		}
 	}
 
-	if (bdontCrossCorner) {
-		if (NodeArray[CurrentNode->GetPositionX()][p_CheckY].GetIsWall() ||
-			NodeArray[p_CheckX][CurrentNode->GetPositionY()].GetIsWall()) {
+	if (bdontCrossCorner)
+	{
+		if (NodeArray[CurrentNode->GetPositionX()][p_CheckY].GetIsWall() || NodeArray[p_CheckX][CurrentNode->GetPositionY()].GetIsWall())
+		{
 			return;
 		}
 	}
 
 
-	//Ã¼Å©ÇÏ´Â ºí·ÏÀÇ ³ëµå Á¤º¸ °¡Á®¿È
-	Node_Info * NeighborNode=&NodeArray[p_CheckX][p_CheckY]; 
+	//ì²´í¬í•˜ëŠ” ë¸”ë¡ì˜ ë…¸ë“œ ì •ë³´ ê°€ì ¸ì˜´
+	Node_Info * NeighborNode = &NodeArray[p_CheckX][p_CheckY];
 
 
 	//10 or 14
-	int movecost=CurrentNode->GetCostG() + (CurrentNode->GetPositionX()- p_CheckX ==0 || CurrentNode->GetPositionY()- p_CheckY == 0 ? 10 : 14);
+	int movecost = CurrentNode->GetCostG() + (CurrentNode->GetPositionX() - p_CheckX == 0 || CurrentNode->GetPositionY() - p_CheckY == 0 ? 10 : 14);
 
-	//ÇØ´ç ÀÌ¿ô³ëµå°¡ ¿ÀÇÂ¸®½ºÆ®¿¡ Æ÷ÇÔµÇ¾î ÀÖÁö ¾Ê°Å³ª,
-	//ÇöÀç³ëµåÀÇ ÀÌµ¿ºñ¿ëÀÌ ÀÌ¿ô³ëµå ÀÌµ¿ºñ¿ëº¸´Ù Àú·ÅÇÏ´Ù¸é
-	if (movecost < NeighborNode->GetCostG() || !OpenList.Contains(NeighborNode)) {
-		NeighborNode->SetCostG(movecost);  //ÀÌµ¿ºñ¿ë ¼³Á¤
-		NeighborNode->SetCostH(Cur_TargetBlock->GetBlockNumber());//¸ñÇ¥±îÁöÀÇ ÃßÁ¤°ª ¼³Á¤
-		NeighborNode->SetParentNode(CurrentNode); //ºÎ¸ğ³ëµå ¼³Á¤
-		if (NeighborNode->GetParent() != CurrentNode) {
+	//í•´ë‹¹ ì´ì›ƒë…¸ë“œê°€ ì˜¤í”ˆë¦¬ìŠ¤íŠ¸ì— í¬í•¨ë˜ì–´ ìˆì§€ ì•Šê±°ë‚˜,
+	//í˜„ì¬ë…¸ë“œì˜ ì´ë™ë¹„ìš©ì´ ì´ì›ƒë…¸ë“œ ì´ë™ë¹„ìš©ë³´ë‹¤ ì €ë ´í•˜ë‹¤ë©´
+	if (movecost < NeighborNode->GetCostG() || !OpenList.Contains(NeighborNode))
+	{
+		NeighborNode->SetCostG(movecost);  //ì´ë™ë¹„ìš© ì„¤ì •
+		NeighborNode->SetCostH(Cur_TargetBlock->GetBlockNumber());//ëª©í‘œê¹Œì§€ì˜ ì¶”ì •ê°’ ì„¤ì •
+		NeighborNode->SetParentNode(CurrentNode); //ë¶€ëª¨ë…¸ë“œ ì„¤ì •
+
+		if (NeighborNode->GetParent() != CurrentNode)
+		{
 			return;
 		}
-		OpenList.Push(NeighborNode); //¿ÀÇÂ¸®½ºÆ®¿¡ Ãß°¡
+		OpenList.Push(NeighborNode); //ì˜¤í”ˆë¦¬ìŠ¤íŠ¸ì— ì¶”ê°€
 	}
 }
 
-/*ÃÊ±âÈ­ ´ã´ç*/
-void AA_Star_AlgorithmBlockGrid::SetRelease(){	
+/*ì´ˆê¸°í™” ë‹´ë‹¹*/
+void AA_Star_AlgorithmBlockGrid::SetRelease()
+{
+	if (OpenList.Num())
+		OpenList.Empty();
 
-	if (OpenList.Num()) 
-		OpenList.Empty();			
+	if (ClosedList.Num())
+		ClosedList.Empty();
 
-	if (ClosedList.Num()) 
-		ClosedList.Empty();	
-
-	if (FinalPathList.Num()) 
-		FinalPathList.Empty();	
+	if (FinalPathList.Num())
+		FinalPathList.Empty();
 }//end of SetRelase
 
 
-/*ÃÖÁ¾ ¸®½ºÆ®(FinalPositionList) µÚÁı±â*/
-void AA_Star_AlgorithmBlockGrid::ReverseArray(){
+/*ìµœì¢… ë¦¬ìŠ¤íŠ¸(FinalPositionList) ë’¤ì§‘ê¸°*/
+void AA_Star_AlgorithmBlockGrid::ReverseArray()
+{
 	FVector2D temp;
-	const int max= FinalPathList.Num();
-	for (int i = 0; i < max / 2; i++) {
-		temp=FinalPathList[i];
-		FinalPathList[i]= FinalPathList[max -i-1];
-		FinalPathList[max - i - 1]=temp;
+	const int max = FinalPathList.Num();
+
+	for (int i = 0; i < max / 2; i++)
+	{
+		temp = FinalPathList[i];
+		FinalPathList[i] = FinalPathList[max - i - 1];
+		FinalPathList[max - i - 1] = temp;
 	}
 }
 
-/*º® ºí·Ï ÁöÁ¤ Åä±Û*/
-void AA_Star_AlgorithmBlockGrid::SetWalllBlock(FVector2D p_Position,bool p_IsWall){
-	const int x=p_Position.X;
-	const int y=p_Position.Y;
+/*ë²½ ë¸”ë¡ ì§€ì • í† ê¸€*/
+void AA_Star_AlgorithmBlockGrid::SetWalllBlock(FVector2D p_Position, bool p_IsWall)
+{
+	const int x = p_Position.X;
+	const int y = p_Position.Y;
 
 	NodeArray[x][y].SetWall(p_IsWall);
-
 }//end of SetWallBlock
 
 
-void AA_Star_AlgorithmBlockGrid::AllClearBlock(){
-	/*°æ·Î·Î ÁöÁ¤ µÇ¾î ÀÖ´Â ºí·Ï ÃÊ±âÈ­*/
-	const int size= Current_PathBlocks.Num();
-	for (int i = 0; i < size; i++) {
+void AA_Star_AlgorithmBlockGrid::AllClearBlock()
+{
+	/*ê²½ë¡œë¡œ ì§€ì • ë˜ì–´ ìˆëŠ” ë¸”ë¡ ì´ˆê¸°í™”*/
+	const int size = Current_PathBlocks.Num();
+
+	for (int i = 0; i < size; i++)
+	{
 		Current_PathBlocks[i]->SetPathBlock();
 	}
+
 	Current_PathBlocks.Empty();
 
-	if (Cur_StartBlock != nullptr) { //½ÃÀÛ ºí·Ï ÃÊ±âÈ­
+
+	if (Cur_StartBlock != nullptr)
+	{ //ì‹œì‘ ë¸”ë¡ ì´ˆê¸°í™”
 		Cur_StartBlock->SetBasicMaterial();
 		Cur_StartBlock->SetIsClicked(false);
 		Cur_StartBlock = nullptr;
 	}
 
-	if (Cur_TargetBlock != nullptr) { //Å¸°Ù ºí·Ï ÃÊ±âÈ­
+	if (Cur_TargetBlock != nullptr) { //íƒ€ê²Ÿ ë¸”ë¡ ì´ˆê¸°í™”
 		Cur_TargetBlock->SetBasicMaterial();
 		Cur_TargetBlock->SetIsClicked(false);
 		Cur_TargetBlock = nullptr;
 	}
-	
+
 }
 
 
-void AA_Star_AlgorithmBlockGrid::DrawPath(FVector2D p_DrawPosition,int p_CurBlockNumber){
+void AA_Star_AlgorithmBlockGrid::DrawPath(FVector2D p_DrawPosition, int p_CurBlockNumber)
+{
 	const int x = p_DrawPosition.X;
 	const int y = p_DrawPosition.Y;
 
-	//ÇØ´ç ºí·ÏÀ» °æ·Î ºí·ÏÀ¸·Î ÁöÁ¤
+	//í•´ë‹¹ ë¸”ë¡ì„ ê²½ë¡œ ë¸”ë¡ìœ¼ë¡œ ì§€ì •
 	NodeArray[x][y].GetCurBlock()->SetPathBlock();
 
-	//¼ıÀÚÇ¥½Ã
+	//ìˆ«ìí‘œì‹œ
 	NodeArray[x][y].GetCurBlock()->SetTextNumber(FText::FromString(FString::FromInt(p_CurBlockNumber)));
 
-	//±æºí·Ï ¹è¿­ ÀúÀå-ÃßÈÄ Áö¿ì±â À§ÇÔ
+	//ê¸¸ë¸”ë¡ ë°°ì—´ ì €ì¥-ì¶”í›„ ì§€ìš°ê¸° ìœ„í•¨
 	Current_PathBlocks.Push(NodeArray[x][y].GetCurBlock());
 }
 
 
-void AA_Star_AlgorithmBlockGrid::SpawnBlocks(){
-	// ºí·ÏÀÇ ÃÑ °¹¼ö
+void AA_Star_AlgorithmBlockGrid::SpawnBlocks()
+{
+	// ë¸”ë¡ì˜ ì´ ê°¯ìˆ˜
 	const int32 NumBlocks = GridSize * GridSize;
 
-	// ºí·Ï »ı¼º ¹İº¹
-	for (int32 BlockIndex = 0; BlockIndex < NumBlocks; BlockIndex++) {
+	// ë¸”ë¡ ìƒì„± ë°˜ë³µ
+	for (int32 BlockIndex = 0; BlockIndex < NumBlocks; BlockIndex++)
+	{
 
 		const float XOffset = (BlockIndex / GridSize) * BlockSpacing; // Divide by dimension
 		const float YOffset = (BlockIndex%GridSize) * BlockSpacing; // Modulo gives remainder
@@ -397,18 +422,19 @@ void AA_Star_AlgorithmBlockGrid::SpawnBlocks(){
 
 
 		// Tell the block about its owner
-		if (NewBlock != nullptr) {
+		if (NewBlock != nullptr)
+		{
 
-			//»ı¼º µÈ ºí·Ï¿¡ ÁÖÀÎ Grid ÁöÁ¤
+			//ìƒì„± ëœ ë¸”ë¡ì— ì£¼ì¸ Grid ì§€ì •
 			NewBlock->SetOwingGrid(this);
 
 			const int X_Value = XOffset / BlockSpacing;
 			const int Y_Value = YOffset / BlockSpacing;
 
-			//Ãß°¡ °¢ ºí·Ï´ç ¼ıÀÚ ºÎ¿©ÇØÁÜ
+			//ì¶”ê°€ ê° ë¸”ë¡ë‹¹ ìˆ«ì ë¶€ì—¬í•´ì¤Œ
 			NewBlock->SetBlockNumber(FVector2D(X_Value, Y_Value));
 
-			//ÀüÃ¼ ³ëµå¹è¿­¿¡ °¢°¢ ºí·Ï ÁöÁ¤
+			//ì „ì²´ ë…¸ë“œë°°ì—´ì— ê°ê° ë¸”ë¡ ì§€ì •
 			NodeArray[X_Value][Y_Value].SetCurBlock(NewBlock);
 
 			NodeArray[X_Value][Y_Value].SetPosition(X_Value, Y_Value);
@@ -416,17 +442,21 @@ void AA_Star_AlgorithmBlockGrid::SpawnBlocks(){
 	}//end of for
 }
 
-void AA_Star_AlgorithmBlockGrid::MovingTimer(){
-	if (CharacterPath.Num() <= Cur_PathCountNum) {
-		GetWorldTimerManager().ClearTimer(CountdownTimerHandle); //Å¸ÀÌ¸Ó Á¤Áö
+void AA_Star_AlgorithmBlockGrid::MovingTimer()
+{
+	if (CharacterPath.Num() <= Cur_PathCountNum)
+	{
+		GetWorldTimerManager().ClearTimer(CountdownTimerHandle); //íƒ€ì´ë¨¸ ì •ì§€
 		return;
 	}
-	else {
+	else
+	{
 		UE_LOG(LogTemp, Log, TEXT("%d"), Cur_PathCountNum);
+
 		const FVector2D Cur_DrawPosition = this->CharacterPath[Cur_PathCountNum];
 
-		//°æ·Î ºí·Ï ±×¸®±â(À§Ä¡,¹øÈ£)
-		DrawPath(Cur_DrawPosition, Cur_PathCountNum);
+
+		DrawPath(Cur_DrawPosition, Cur_PathCountNum); //ê²½ë¡œ ë¸”ë¡ ê·¸ë¦¬ê¸°(ìœ„ì¹˜,ë²ˆí˜¸)
 	}
 	Cur_PathCountNum++;
 }
