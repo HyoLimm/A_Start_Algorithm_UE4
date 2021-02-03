@@ -17,7 +17,7 @@ AA_Star_AlgorithmBlockGrid::AA_Star_AlgorithmBlockGrid() {
 	GridSize = 20;
 	BlockSpacing = 300.f; 
 
-	//珥덇린??
+
 	bAllowDiagonal = false;
 	bDontCrossCorner = false;
 	mMovingTime = 0.1f;
@@ -43,7 +43,7 @@ AA_Star_AlgorithmBlockGrid::AA_Star_AlgorithmBlockGrid() {
 
 void AA_Star_AlgorithmBlockGrid::BeginPlay() {
 	Super::BeginPlay();
-	//釉붾줉 ?앹꽦
+
 	SpawnBlocks();
 
 }//end of BeginPlay()
