@@ -4,55 +4,85 @@ class Node_Info {
 
 public:
 	Node_Info()
-		: m_NodePosition(FVector2D(0,0)), m_ParentNode(nullptr), G(0), m_bIsWall(false)
-		{}
-	Node_Info(FVector2D _position, Node_Info* _Parent, int _g, FVector2D _H,bool _IsWall=false)
-		: m_NodePosition(_position), m_ParentNode(_Parent),G(_g),m_bIsWall(_IsWall)
-	{		
-		SetCostH(_H);		
+		: m_NodePosition(FVector2D(0, 0)), m_ParentNode(nullptr), G(0), m_bIsWall(false)
+	{}
+	Node_Info(FVector2D _position, Node_Info* _Parent, int _g, FVector2D _H, bool _IsWall = false)
+		: m_NodePosition(_position), m_ParentNode(_Parent), G(_g), m_bIsWall(_IsWall)
+	{
+		SetCostH(_H);
 		SetCostF();
 	}
 
 
 public://Setter
+
+	bool operator==(const Node_Info& ref) const
+	{
+		if (ref.GetCostG() != GetCostG())
+		{
+			return false;
+		}
+
+		if (ref.GetCostF() != GetCostF())
+		{
+			return false;
+		}
+
+		if (ref.m_NodePosition.X != m_NodePosition.X)
+		{
+			return false;
+		}
+
+		if (ref.m_NodePosition.Y != m_NodePosition.Y)
+		{
+			return false;
+		}
+
+		if (m_CurBlock != ref.m_CurBlock)
+		{
+			return false;
+		}
+		return true;
+	}
 	void SetPosition(const int x, const int y) {
 		m_NodePosition.X = x;
 		m_NodePosition.Y = y;
 	}
-	void SetCurBlock(class AA_Star_AlgorithmBlock * p_CurBlock) {m_CurBlock = p_CurBlock;}
-	void SetParentNode(Node_Info * p_ParentNode) { m_ParentNode = p_ParentNode; }
+	void SetCurBlock(class AA_Star_AlgorithmBlock * p_CurBlock) { m_CurBlock = p_CurBlock; }
+	void SetParentNode(Node_Info*  p_ParentNode) { m_ParentNode = p_ParentNode; }
 	void SetWall(const int _isWall) { m_bIsWall = _isWall; }
 
 
 	void SetCostG(const int _G) { G = _G; }
 	void SetCostF() { F = G + H; }
-	void SetCostH(const FVector2D Target) {
+	void SetCostH(const FVector2D Target)
+	{
 		H = (abs(Target.X - m_NodePosition.X) + abs(Target.Y - m_NodePosition.Y)) * 10;
 	}
 
 public://Getter
-	int GetCostG() const { return G; } //ÀÌµ¿Çß´ø °Å¸®
-	int GetCostH() const { return H; }  //¸ñÇ¥±îÁöÀÇ °Å¸®
+	int GetCostG() const { return G; } //ì´ë™í–ˆë˜ ê±°ë¦¬
+	int GetCostH() const { return H; }  //ëª©í‘œê¹Œì§€ì˜ ê±°ë¦¬
 	int GetCostF() const { return G + H; }
 
 	FVector2D GetPoistion() const { return m_NodePosition; }
-	int GetPositionX() const { return m_NodePosition.X; }
-	int GetPositionY() const { return m_NodePosition.Y; }
-	bool GetIsWall() const {return m_bIsWall;}
+	int GetX() const { return m_NodePosition.X; }
+	int GetY() const { return m_NodePosition.Y; }
+	bool GetIsWall() const { return m_bIsWall; }
 
-	Node_Info * GetParent() const { return m_ParentNode; }
+	Node_Info*  GetParent() const { return m_ParentNode; }
 
-	class AA_Star_AlgorithmBlock * GetCurBlock() const{return  m_CurBlock;}
+	class AA_Star_AlgorithmBlock * GetCurBlock() const { return  m_CurBlock; }
 
 
-
+	
 private:
 	class AA_Star_AlgorithmBlock * m_CurBlock;
 	FVector2D m_NodePosition;
 	Node_Info* m_ParentNode;
 
-	int	H;//¸ñÇ¥³ëµå±îÁöÀÇ ¿¹»ó °Å¸®(ÈŞ¸®½ºÆ½ : ÃßÁ¤ °ª)
-	int G;// ½ÃÀÛºÎÅÍ Áö±İ±îÁö ÀÌµ¿ÇÑ ³ëµåÀÇ ÇÕ
+	int	H;//ëª©í‘œë…¸ë“œê¹Œì§€ì˜ ì˜ˆìƒ ê±°ë¦¬(íœ´ë¦¬ìŠ¤í‹± : ì¶”ì • ê°’)
+	int G;// ì‹œì‘ë¶€í„° ì§€ê¸ˆê¹Œì§€ ì´ë™í•œ ë…¸ë“œì˜ í•©
 	int F;//H+G;
 
 
