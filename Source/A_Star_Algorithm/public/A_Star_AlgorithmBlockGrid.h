@@ -15,120 +15,116 @@ class AA_Star_AlgorithmBlockGrid : public AActor
 {
 	GENERATED_BODY()
 
-	/*·çÆ® ÄÄÆ÷³ÍÆ®*/
+protected:
+	virtual void BeginPlay() override;
+public:
+
+	UPROPERTY(VisibleAnywhere, Category = "Block")
+	class AA_Star_AlgorithmBlock * curStartBlock;
+
+
+	UPROPERTY(VisibleAnywhere, Category = "Block")
+	class AA_Star_AlgorithmBlock * curTargetBlock;
+
+
+
+	class AA_Star_AlgorithmPawn * PawnOwner;
+
+public:
+	/*ë£¨íŠ¸ ì»´í¬ë„ŒíŠ¸*/
 	UPROPERTY(Category = Grid, VisibleDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	class USceneComponent* RootComp;
 
-public:
+
 	AA_Star_AlgorithmBlockGrid();
 
 	/** Number of blocks along each side of grid */
-	UPROPERTY(Category=Grid, EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(Category = Grid, EditAnywhere, BlueprintReadOnly)
 	int32 GridSize;
 
 	/** Spacing of blocks */
-	UPROPERTY(Category=Grid, EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(Category = Grid, EditAnywhere, BlueprintReadOnly)
 	float BlockSpacing;
 
 	UPROPERTY(Category = Grid, EditAnywhere, BlueprintReadWrite)
 	bool bAllowDiagonal;
 
 	UPROPERTY(Category = Grid, EditAnywhere, BlueprintReadWrite)
-	bool bdontCrossCorner;
-protected:
-	// Begin AActor interface
-	virtual void BeginPlay() override;
-	// End AActor interface
-	   	 
-public:
-	FVector2D DirectionInfo[4];
+	bool bDontCrossCorner;
 
-	/*°¥¼ö ÀÖ´Â ÁÖº¯±æÀ» ´ã¾Æ ³õ´Â°÷*/
-	TArray<Node_Info*> OpenList;
-
-	/*Áö³ª¿Â °æ·Î*/
-	//TList<Node_Info>* ClosedList;
-	TArray<Node_Info*> ClosedList;
-	   
-	Node_Info * CurrentNode;
-
-	/*ÃÖÁ¾ °æ·Î*/
-	TArray<FVector2D> FinalPathList;
-	
-	/*Ä³¸¯ÅÍ °æ·Î*/
-	TArray<FVector2D> CharacterPath;
-
-
-	/*ÀüÃ¼ ºí·Ï °ü¸®*/
-	Node_Info NodeArray[20][20];
-
-	UPROPERTY(VisibleAnywhere, Category = "Block")
-	class AA_Star_AlgorithmBlock * Cur_StartBlock;
-
-
-	UPROPERTY(VisibleAnywhere, Category = "Block")
-	class AA_Star_AlgorithmBlock * Cur_TargetBlock;
-
-
-
-	class AA_Star_AlgorithmPawn * PawnOwner;
-
-	//½ÃÀÛºí·Ï ÁöÁ¤
+	//ì‹œì‘ë¸”ë¡ ì§€ì •
 	void SelectStartBlock(class AA_Star_AlgorithmBlock * StartBlock);
 
-	//¸ñÇ¥ºí·Ï ÁöÁ¤
+	//ëª©í‘œë¸”ë¡ ì§€ì •
 	void SelectTargetBlock(class AA_Star_AlgorithmBlock * TargetBlock);
 
-	//º® ºí·Ï Åä±Û
+	//ë²½ ë¸”ë¡ í† ê¸€
 	void SetWalllBlock(FVector2D p_Position, bool p_IsWall = false);
 
-	/*¼±ÅÃ µÇ¾î ÀÖ´Â °æ·Î,½ÃÀÛ,Å¸°Ù ºí·Ïµé)*/
+	/*ì„ íƒ ë˜ì–´ ìˆëŠ” ê²½ë¡œ,ì‹œì‘,íƒ€ê²Ÿ ë¸”ë¡ë“¤)*/
 	void AllClearBlock();
 
 
 private:
-	//±æÃ£±â ½ÃÀÛ - Àç±Í
-	TArray<FVector2D> GetPath_Recursive(FVector2D Start, FVector2D Target);
-	/*Àç±Í¸¦ ÀÌ¿ëÇÑ ÃÖÀûÀÇ ±æÃ£±â*/
-	Node_Info * Recursive_FindPath(Node_Info* parent, FVector2D target);
-
-	//¿ÀÇÂ ¸®½ºÆ® Ãß°¡
-	void AddOpenList(Node_Info* _node);
-
-	//±æÃ£±â ½ÃÀÛ 
+	//ê¸¸ì°¾ê¸° ì‹œì‘ 
 	TArray<FVector2D> GetPath_While(FVector2D Start, FVector2D Target);
 
-	void  OpenListAdd(int x,int y);
+	void  OpenListAdd(const int x,const int y);
 
-	//°æ·Î·Î ÁöÁ¤ µÇ¾î ÀÖ´Â ºí·Ïµé ¹è¿­
+	//ê²½ë¡œë¡œ ì§€ì • ë˜ì–´ ìˆëŠ” ë¸”ë¡ë“¤ ë°°ì—´
 	class TArray<AA_Star_AlgorithmBlock *> Current_PathBlocks;
 
-	//¿¹¿Ü¹ß»ı Ã¼Å© (±×¸®µå ¹İ°İ ¹ş¾î³ª°Å³ª, º® ¿©ºÎ, CloseList¿¡ ÀÖ´ÂÁö ¿©ºÎ µî)
+	//ì˜ˆì™¸ë°œìƒ ì²´í¬ (ê·¸ë¦¬ë“œ ë°˜ê²© ë²—ì–´ë‚˜ê±°ë‚˜, ë²½ ì—¬ë¶€, CloseListì— ìˆëŠ”ì§€ ì—¬ë¶€ ë“±)
 	bool CheckException(FVector2D _Position);
 
-	/*¸ñÇ¥ÁöÁ¡ µµÂøÇß´Â°¡?*/
+	/*ëª©í‘œì§€ì  ë„ì°©í–ˆëŠ”ê°€?*/
 	bool GetArriveTarget(FVector2D Start, FVector2D Target);
 
-	/*ÃÊ±âÈ­*/
+	/*ì´ˆê¸°í™”*/
 	void SetRelease();
 
-	//¹è¿­ ¿ª¼ø
+	//ë°°ì—´ ì—­ìˆœ
 	void ReverseArray();
 
-	//°æ·Î ±×¸®±â
+	//ê²½ë¡œ ê·¸ë¦¬ê¸°
 	void DrawPath(FVector2D p_DrawPosition, int p_CurBlockNumber);
-		
-	//ºí·Ï »ı¼º
+
+	//ë¸”ë¡ ìƒì„±
 	void SpawnBlocks();
 
-private://Å¸ÀÌ¸Ó °ü·Ã
+private:
+	FVector2D mDirInfo[4];
+
+	FVector2D mDirDiagnolInfo[4];
+
+
+	/*ê°ˆìˆ˜ ìˆëŠ” ì£¼ë³€ê¸¸ì„ ë‹´ì•„ ë†“ëŠ”ê³³*/
+	TArray<Node_Info*> mOpenList;
+
+	/*ì§€ë‚˜ì˜¨ ê²½ë¡œ*/
+	//TList<Node_Info>* ClosedList;
+	TArray<Node_Info*> mClosedList;
+
+	Node_Info* mCurrentNode;
+
+	/*ìµœì¢… ê²½ë¡œ*/
+	TArray<FVector2D> mFinalPathList;
+
+	/*ìºë¦­í„° ê²½ë¡œ*/
+	TArray<FVector2D> mCharacterPath;
+
+
+	/*ì „ì²´ ë¸”ë¡ ê´€ë¦¬*/
+	Node_Info mNodeArr[20][20];
+private://íƒ€ì´ë¨¸ ê´€ë ¨
+
 	void MovingTimer();
 
-	int32 Cur_PathCountNum;
+	int32 mCurPathCountNum;
 
-	FTimerHandle CountdownTimerHandle;
+	FTimerHandle mCountdownTimerHandle;
 
-	float MovingTime;
+	float mMovingTime;
 };
 
 
