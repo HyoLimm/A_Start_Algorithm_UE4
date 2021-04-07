@@ -7,18 +7,16 @@
 #include "A_Star_AlgorithmBlockGrid.h"
 #include "A_Star_AlgorithmBlock.generated.h"
 
+class UMaterialInstance;
+class UTextRenderComponent;
+class USceneComponent;
+class UStaticMeshComponent;
+
 UCLASS(minimalapi)
 class AA_Star_AlgorithmBlock : public AActor
 {
 	GENERATED_BODY()
-
-private:
-	UPROPERTY(Category = Block, VisibleDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-	class USceneComponent* DummyRoot;
-
-	UPROPERTY(Category = Block, VisibleDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-	class UStaticMeshComponent* BlockMesh;
-	
+			   	
 public:
 	AA_Star_AlgorithmBlock();
 
@@ -33,22 +31,30 @@ public:
 
 	void SetPathBlock();
 
-	void SetWallBlock(bool IsWall);
+	void SetSearchBlock();
 
-	void SetBlockNumber(const FVector2D NewNum);
+	void SetWallBlock(const bool& bIsWall);
 
-	void SetTextNumber(const FText NewNumber);
+	void SetBlockNumber(const FVector2D& newNum);
+
+	void SetTextNumber(const FText& newNumText);
 
 	void SetOwingGrid(AA_Star_AlgorithmBlockGrid* p_OwningGrid);
 
-	void SetIsClicked(bool p_bIsClicked);
+	void SetIsClicked(const bool& bIsClicked);
 
 //Getter
 public:
-	bool GetIsWall() const{return bIsWall;}
-	FVector2D GetBlockNumber() const{return Cur_BlockNumber;}
-	bool GetIsClicked() const{return bIsClicked;}
+	FORCEINLINE bool GetIsWall() const{return bIsWall;}
+	FORCEINLINE FVector2D GetBlockNumber() const{return mNumBlock;}
+	FORCEINLINE bool GetIsClicked() const{return bIsClicked;}
 
+private:
+	UPROPERTY(Category = Block, VisibleDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	USceneComponent* mDummyRoot;
+
+	UPROPERTY(Category = Block, VisibleDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	UStaticMeshComponent* mBlockMesh;
 private:
 
 	/** Are we currently active? */
@@ -60,36 +66,29 @@ private:
 
 	bool bIsPath;
 
-
-	/*Ç¥½Ã¿ë*/
+	AA_Star_AlgorithmBlockGrid* mOwningGridRef;
+private: /*Visible*/	
 	UPROPERTY(Category = Block, VisibleDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-	class UTextRenderComponent* BlockText;
-
+	UTextRenderComponent* mBlockText;
 
 	UPROPERTY(VisibleAnywhere, Category = "Grid")
-	FVector2D Cur_BlockNumber;
+	FVector2D mNumBlock;
 
-	/** Pointer to blue material used on inactive blocks */
-	class UMaterialInstance* BlueMaterial; //±âº»»óÅÂ
+	class UMaterial* MouseOverlapMaterial; //ì‹œì‘ì§€ì  ë§ˆìš°ìŠ¤ ì˜¤ë²„ë©
 
-	/** Pointer to white material used on the focused block */
+	UMaterialInstance* mBaseMaterial; //ê¸°ë³¸ìƒíƒœ
 
-	class UMaterial* MouseOverlapMaterial; //½ÃÀÛÁöÁ¡ ¸¶¿ì½º ¿À¹ö·¦
+	UMaterialInstance* mPinkMaterial; //íƒ€ê²Ÿì§€ì  ì˜¤ë²„ë©
 
-	class UMaterialInstance* PinkMaterial; //Å¸°ÙÁöÁ¡ ¿À¹ö·¦
+	UMaterialInstance* mOrangeMaterial; //ì‹œì‘ì§€ì 
 
-	class UMaterialInstance* OrangeMaterial; //½ÃÀÛÁöÁ¡
+	UMaterialInstance* mRedMaterial; //íƒ€ê²Ÿì§€ì 
 
-	class UMaterialInstance* RedMaterial; //Å¸°ÙÁöÁ¡
+	UMaterialInstance* mPurpleMaterial; //ê²½ë¡œ
 
-	class UMaterialInstance* PurpleMaterial; //°æ·Î
+	UMaterialInstance* mBlackMaterial; //ë²½
 
-	class UMaterialInstance* BlackMaterial; //º®
-
-	//Owner Gird
-	AA_Star_AlgorithmBlockGrid* OwningGrid;
-
-
+	UMaterialInstance* mSearchMaterial; //ë²½
 };
 
 
