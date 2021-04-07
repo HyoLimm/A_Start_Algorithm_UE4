@@ -1,40 +1,34 @@
 // Copyright 1998-2019 Epic Games, Inc. All Rights Reserved.
-
 #pragma once
-
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Containers/List.h"
 #include "Node_Information.h"
 #include "A_Star_AlgorithmBlockGrid.generated.h"
 
+class AA_Star_AlgorithmBlock;
+class AA_Star_AlgorithmPawn;
+class USceneComponent;
 
-/** Class used to spawn blocks and manage score */
 UCLASS(minimalapi)
 class AA_Star_AlgorithmBlockGrid : public AActor
 {
 	GENERATED_BODY()
-
 protected:
 	virtual void BeginPlay() override;
 public:
+	UPROPERTY(VisibleAnywhere, Category = "Block")
+	AA_Star_AlgorithmBlock* curStartBlock;
 
 	UPROPERTY(VisibleAnywhere, Category = "Block")
-	class AA_Star_AlgorithmBlock * curStartBlock;
+	AA_Star_AlgorithmBlock* curTargetBlock;
 
-
-	UPROPERTY(VisibleAnywhere, Category = "Block")
-	class AA_Star_AlgorithmBlock * curTargetBlock;
-
-
-
-	class AA_Star_AlgorithmPawn * PawnOwner;
+	AA_Star_AlgorithmPawn* PawnOwner;
 
 public:
 	/*루트 컴포넌트*/
 	UPROPERTY(Category = Grid, VisibleDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-	class USceneComponent* RootComp;
-
+	USceneComponent* dummyRoot;
 
 	AA_Star_AlgorithmBlockGrid();
 
@@ -59,50 +53,46 @@ public:
 	void SelectTargetBlock(class AA_Star_AlgorithmBlock * TargetBlock);
 
 	//벽 블록 토글
-	void SetWalllBlock(FVector2D p_Position, bool p_IsWall = false);
+	void SetWallBlock(const FVector2D& targetPosition, const bool& IsWall=false);
 
 	/*선택 되어 있는 경로,시작,타겟 블록들)*/
 	void AllClearBlock();
-
-
 private:
-	//길찾기 시작 
-	TArray<FVector2D> GetPath_While(FVector2D Start, FVector2D Target);
-
-	void  OpenListAdd(const int x,const int y);
-
-	//경로로 지정 되어 있는 블록들 배열
-	class TArray<AA_Star_AlgorithmBlock *> Current_PathBlocks;
-
-	//예외발생 체크 (그리드 반격 벗어나거나, 벽 여부, CloseList에 있는지 여부 등)
-	bool CheckException(FVector2D _Position);
-
-	/*목표지점 도착했는가?*/
-	bool GetArriveTarget(FVector2D Start, FVector2D Target);
-
 	/*초기화*/
 	void SetRelease();
+
+	TArray<FVector2D> GetPath_While(const FVector2D& startPosition,const FVector2D& targetPosition);
+
+	/*목표지점 도착했는가?*/
+	bool GetArriveTarget(const FVector2D& startPosition, const FVector2D& targetPosition) const;
 
 	//배열 역순
 	void ReverseArray();
 
+	void  OpenListAdd(const int& currentX, const int& currentY);
+
+	bool CheckException(const FVector2D& targetPosition);
+
 	//경로 그리기
-	void DrawPath(FVector2D p_DrawPosition, int p_CurBlockNumber);
+	void DrawPath(const FVector2D& p_DrawPosition,const int& p_CurBlockNumber);
 
 	//블록 생성
 	void SpawnBlocks();
 
 private:
+	//경로로 지정 되어 있는 블록들 배열
+	TArray<AA_Star_AlgorithmBlock *> curPathBlocks;
+
+
 	FVector2D mDirInfo[4];
 
 	FVector2D mDirDiagnolInfo[4];
-
 
 	/*갈수 있는 주변길을 담아 놓는곳*/
 	TArray<Node_Info*> mOpenList;
 
 	/*지나온 경로*/
-	//TList<Node_Info>* ClosedList;
+
 	TArray<Node_Info*> mClosedList;
 
 	Node_Info* mCurrentNode;
@@ -122,9 +112,9 @@ private://타이머 관련
 
 	int32 mCurPathCountNum;
 
-	FTimerHandle mCountdownTimerHandle;
-
 	float mMovingTime;
+
+	FTimerHandle mCountdownTimerHandle;
 };
 
 
