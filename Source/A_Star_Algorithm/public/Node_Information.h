@@ -4,60 +4,66 @@ class Node_Info {
 
 public:
 	Node_Info()
-		: m_NodePosition(FVector2D(0, 0)), m_ParentNode(nullptr), G(0), m_bIsWall(false)
+		: mNodePosition(FVector2D(0, 0))
+		, mParentNode(nullptr)
+		, G(0)
+		, bIsWall(false)
 	{}
-	Node_Info(FVector2D _position, Node_Info* _Parent, int _g, FVector2D _H, bool _IsWall = false)
-		: m_NodePosition(_position), m_ParentNode(_Parent), G(_g), m_bIsWall(_IsWall)
+	Node_Info(FVector2D curPosition, Node_Info* parentPtr, int newG, FVector2D newH, bool IsWall = false)
+		: mNodePosition(curPosition)
+		, mParentNode(parentPtr)
+		, G(newG)
+		, bIsWall(IsWall)
 	{
-		SetCostH(_H);
+		SetCostH(newH);
 		SetCostF();
 	}
 
 
 public://Setter
 
-	bool operator==(const Node_Info& ref) const
-	{
-		if (ref.GetCostG() != GetCostG())
-		{
-			return false;
-		}
+	//bool operator==(const Node_Info& ref) const
+	//{
+	//	if (ref.GetCostG() != GetCostG())
+	//	{
+	//		return false;
+	//	}
 
-		if (ref.GetCostF() != GetCostF())
-		{
-			return false;
-		}
+	//	if (ref.GetCostF() != GetCostF())
+	//	{
+	//		return false;
+	//	}
 
-		if (ref.m_NodePosition.X != m_NodePosition.X)
-		{
-			return false;
-		}
+	//	if (ref.m_NodePosition.X != mNodePosition.X)
+	//	{
+	//		return false;
+	//	}
 
-		if (ref.m_NodePosition.Y != m_NodePosition.Y)
-		{
-			return false;
-		}
+	//	if (ref.m_NodePosition.Y != mNodePosition.Y)
+	//	{
+	//		return false;
+	//	}
 
-		if (m_CurBlock != ref.m_CurBlock)
-		{
-			return false;
-		}
-		return true;
+	//	if (m_CurBlock != ref.m_CurBlock)
+	//	{
+	//		return false;
+	//	}
+	//	return true;
+	//}
+	void SetPosition(const int& x, const& int y) {
+		mNodePosition.X = x;
+		mNodePosition.Y = y;
 	}
-	void SetPosition(const int x, const int y) {
-		m_NodePosition.X = x;
-		m_NodePosition.Y = y;
-	}
-	void SetCurBlock(class AA_Star_AlgorithmBlock * p_CurBlock) { m_CurBlock = p_CurBlock; }
-	void SetParentNode(Node_Info*  p_ParentNode) { m_ParentNode = p_ParentNode; }
-	void SetWall(const int _isWall) { m_bIsWall = _isWall; }
+	void SetCurBlock(class AA_Star_AlgorithmBlock* p_CurBlock) { m_CurBlock = p_CurBlock; }
+	void SetParentNode(Node_Info*  p_ParentNode) { mParentNode = p_ParentNode; }
+	void SetWall(const int& _isWall) { bIsWall = _isWall; }
 
 
-	void SetCostG(const int _G) { G = _G; }
+	void SetCostG(const int& _G) { G = _G; }
 	void SetCostF() { F = G + H; }
-	void SetCostH(const FVector2D Target)
+	void SetCostH(const FVector2D& Target)
 	{
-		H = (abs(Target.X - m_NodePosition.X) + abs(Target.Y - m_NodePosition.Y)) * 10;
+		H = (abs(Target.X - mNodePosition.X) + abs(Target.Y - mNodePosition.Y)) * 10;
 	}
 
 public://Getter
@@ -65,12 +71,12 @@ public://Getter
 	int GetCostH() const { return H; }  //목표까지의 거리
 	int GetCostF() const { return G + H; }
 
-	FVector2D GetPoistion() const { return m_NodePosition; }
-	int GetX() const { return m_NodePosition.X; }
-	int GetY() const { return m_NodePosition.Y; }
-	bool GetIsWall() const { return m_bIsWall; }
+	FVector2D GetPoistion() const { return mNodePosition; }
+	int GetX() const { return mNodePosition.X; }
+	int GetY() const { return mNodePosition.Y; }
+	bool GetIsWall() const { return bIsWall; }
 
-	Node_Info*  GetParent() const { return m_ParentNode; }
+	Node_Info*  GetParent() const { return mParentNode; }
 
 	class AA_Star_AlgorithmBlock * GetCurBlock() const { return  m_CurBlock; }
 
@@ -78,8 +84,8 @@ public://Getter
 	
 private:
 	class AA_Star_AlgorithmBlock * m_CurBlock;
-	FVector2D m_NodePosition;
-	Node_Info* m_ParentNode;
+	FVector2D mNodePosition;
+	Node_Info* mParentNode;
 
 	int	H;//목표노드까지의 예상 거리(휴리스틱 : 추정 값)
 	int G;// 시작부터 지금까지 이동한 노드의 합
@@ -87,5 +93,5 @@ private:
 
 
 
-	bool m_bIsWall;
+	bool bIsWall;
 };
