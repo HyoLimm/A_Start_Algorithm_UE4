@@ -9,6 +9,11 @@
 #include "Materials/MaterialInstance.h"
 
 AA_Star_AlgorithmBlock::AA_Star_AlgorithmBlock()
+	: bIsClicked(false)
+	, bIsWall(false)
+	, bIsPath(false)
+	, mOwningGridRef(nullptr)
+	, mNumBlock(FVector2D(0.0f, 0.0f))
 {
 	// Structure to hold one-time initialization
 	struct FConstructorStatics
@@ -17,165 +22,181 @@ AA_Star_AlgorithmBlock::AA_Star_AlgorithmBlock()
 		ConstructorHelpers::FObjectFinderOptional<UMaterial> BaseMaterial;
 		ConstructorHelpers::FObjectFinderOptional<UMaterialInstance> BlueMaterial;
 		ConstructorHelpers::FObjectFinderOptional<UMaterialInstance> OrangeMaterial;
-		ConstructorHelpers::FObjectFinderOptional<UMaterialInstance> PinkMaterial; //Ãß°¡
-		ConstructorHelpers::FObjectFinderOptional<UMaterialInstance> RedMaterial; //Ãß°¡
+		ConstructorHelpers::FObjectFinderOptional<UMaterialInstance> PinkMaterial; //ì¶”ê°€
+		ConstructorHelpers::FObjectFinderOptional<UMaterialInstance> RedMaterial;
 		ConstructorHelpers::FObjectFinderOptional<UMaterialInstance> PurpleMaterial;
 		ConstructorHelpers::FObjectFinderOptional<UMaterialInstance> BlackMaterial;
+		ConstructorHelpers::FObjectFinderOptional<UMaterialInstance> mSearchMaterial;
 		FConstructorStatics()
 			: PlaneMesh(TEXT("/Game/Puzzle/Meshes/PuzzleCube.PuzzleCube"))
 			, BaseMaterial(TEXT("/Game/Puzzle/Meshes/BaseMaterial.BaseMaterial"))
 			, BlueMaterial(TEXT("/Game/Puzzle/Meshes/BlueMaterial.BlueMaterial"))
 			, OrangeMaterial(TEXT("/Game/Puzzle/Meshes/OrangeMaterial.OrangeMaterial"))
-			, PinkMaterial(TEXT("/Game/Puzzle/Meshes/PinkMaterial.PinkMaterial")) //Ãß°¡
-			, RedMaterial(TEXT("/Game/Puzzle/Meshes/RedMaterial.RedMaterial")) //Ãß°¡
-			, PurpleMaterial(TEXT("/Game/Puzzle/Meshes/PurpleMaterial.PurpleMaterial")) //Ãß°¡
-			, BlackMaterial(TEXT("/Game/Puzzle/Meshes/BlackMaterial.BlackMaterial"))//Ãß°¡
+			, PinkMaterial(TEXT("/Game/Puzzle/Meshes/PinkMaterial.PinkMaterial")) //ì¶”ê°€
+			, RedMaterial(TEXT("/Game/Puzzle/Meshes/RedMaterial.RedMaterial"))
+			, PurpleMaterial(TEXT("/Game/Puzzle/Meshes/PurpleMaterial.PurpleMaterial"))
+			, BlackMaterial(TEXT("/Game/Puzzle/Meshes/BlackMaterial.BlackMaterial"))
+			, mSearchMaterial(TEXT("/Game/Puzzle/Meshes/SeachMaterial.SeachMaterial"))
 		{}
 	};
 	static FConstructorStatics ConstructorStatics;
 
-	// Create dummy root scene component
-	DummyRoot = CreateDefaultSubobject<USceneComponent>(TEXT("Dummy0"));
-	RootComponent = DummyRoot;
+	mDummyRoot = CreateDefaultSubobject<USceneComponent>(TEXT("Dummy0"));
+	RootComponent = mDummyRoot;
 
-	// Create static mesh component
-	BlockMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BlockMesh0"));
-	BlockMesh->SetStaticMesh(ConstructorStatics.PlaneMesh.Get());
-	BlockMesh->SetRelativeScale3D(FVector(1.f,1.f,0.25f));
-	BlockMesh->SetRelativeLocation(FVector(0.f,0.f,25.f));
-	BlockMesh->SetMaterial(0, ConstructorStatics.BlueMaterial.Get());
-	BlockMesh->SetupAttachment(DummyRoot);
-	//BlockMesh->OnClicked.AddDynamic(this, &AA_Star_AlgorithmBlock::BlockClicked);
-	//BlockMesh->OnInputTouchBegin.AddDynamic(this, &AA_Star_AlgorithmBlock::OnFingerPressedBlock);
+	//Set StaticMesh
+	mBlockMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BlockMesh0"));
+	mBlockMesh->SetStaticMesh(ConstructorStatics.PlaneMesh.Get());
+	mBlockMesh->SetRelativeScale3D(FVector(1.f, 1.f, 0.25f));
+	mBlockMesh->SetRelativeLocation(FVector(0.f, 0.f, 25.f));
+	mBlockMesh->SetMaterial(0, ConstructorStatics.BlueMaterial.Get());
+	mBlockMesh->SetupAttachment(mDummyRoot);
 
+	//ì¶”ê°€
+	mBlockText = CreateDefaultSubobject<UTextRenderComponent>(TEXT("TEXT"));
+	mBlockText->SetupAttachment(mDummyRoot);
 
-	//Ãß°¡
-	BlockText=CreateDefaultSubobject<UTextRenderComponent>(TEXT("TEXT"));
-	BlockText->SetupAttachment(DummyRoot);
+	//TEXT ìœ„ì¹˜ì¡°ì ˆ
+	mBlockText->SetRelativeLocation(FVector(-60.f, -100.f, 60.0f));
+	mBlockText->SetRelativeRotation(FRotator(90.f, 180.f, 0.f));
+	mBlockText->SetXScale(5.f);
+	mBlockText->SetYScale(5.f);
 
-	//TEXT À§Ä¡Á¶Àý
-	BlockText->SetRelativeLocation(FVector(-60.f,-100.f,60.0f));
-	BlockText->SetRelativeRotation(FRotator(90.f,180.f,0.f));
-	BlockText->SetXScale(5.f);
-	BlockText->SetYScale(5.f);
-
-	//»ö»ó,ÃÊ¹Ý ¼û±è
-	BlockText->SetTextRenderColor(FColor::Black);
-	BlockText->SetVisibility(false);
+	//ìƒ‰ìƒ,ì´ˆë°˜ ìˆ¨ê¹€
+	mBlockText->SetTextRenderColor(FColor::Black);
+	mBlockText->SetVisibility(false);
 
 	// Save a pointer to the orange material
 	MouseOverlapMaterial = ConstructorStatics.BaseMaterial.Get();
-	BlueMaterial = ConstructorStatics.BlueMaterial.Get();
-	OrangeMaterial = ConstructorStatics.OrangeMaterial.Get();
-	PurpleMaterial = ConstructorStatics.PurpleMaterial.Get();
+	mBaseMaterial = ConstructorStatics.BlueMaterial.Get();
+	mOrangeMaterial = ConstructorStatics.OrangeMaterial.Get();
+	mPurpleMaterial = ConstructorStatics.PurpleMaterial.Get();
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	//Ãß°¡
-	PinkMaterial = ConstructorStatics.PinkMaterial.Get();
-	RedMaterial = ConstructorStatics.RedMaterial.Get();
-	BlackMaterial = ConstructorStatics.BlackMaterial.Get();
-
-
-	//°ª ÃÊ±âÈ­
-	Cur_BlockNumber = FVector2D(0.0f, 0.0f);
-	bIsPath=false;
+	//ì¶”ê°€
+	mPinkMaterial = ConstructorStatics.PinkMaterial.Get();
+	mRedMaterial = ConstructorStatics.RedMaterial.Get();
+	mBlackMaterial = ConstructorStatics.BlackMaterial.Get();
+	mSearchMaterial = ConstructorStatics.mSearchMaterial.Get();
 }
 
-void AA_Star_AlgorithmBlock::HandleClicked(){
+void AA_Star_AlgorithmBlock::HandleClicked() {
 	//Check OwningGrid
-	if (OwningGrid == nullptr) return;
+	if (mOwningGridRef == nullptr) return;
 
-	if (!bIsClicked){
-		if (OwningGrid->Cur_StartBlock == nullptr) { //½ÃÀÛ ÁöÁ¡ ÁöÁ¤
-			BlockMesh->SetMaterial(0, OrangeMaterial); //½ÃÀÛ ºí·° »ö»ó º¯°æ
-			OwningGrid->SelectStartBlock(this);//½ÃÀÛ ºí·° ÁöÁ¤			
+	if (!bIsClicked) {
+		if (mOwningGridRef->curStartBlock == nullptr) { //ì‹œìž‘ ì§€ì  ì§€ì •
+			mBlockMesh->SetMaterial(0, mOrangeMaterial); //ì‹œìž‘ ë¸”ëŸ­ ìƒ‰ìƒ ë³€ê²½
+			mOwningGridRef->SelectStartBlock(this);//ì‹œìž‘ ë¸”ëŸ­ ì§€ì •			
 			bIsClicked = true;
 
 		}
-		else if(OwningGrid->Cur_TargetBlock == nullptr) { //¸ñÇ¥ÁöÁ¤ ÁöÁ¤
-			BlockMesh->SetMaterial(0, RedMaterial); //¸ñÇ¥ÁöÁ¡ »ö»ó º¯°æ
-			OwningGrid->SelectTargetBlock(this); //¸ñÇ¥ ºí·Ï ÁöÁ¤
+		else if (mOwningGridRef->curTargetBlock == nullptr) { //ëª©í‘œì§€ì • ì§€ì •
+			mBlockMesh->SetMaterial(0, mRedMaterial); //ëª©í‘œì§€ì  ìƒ‰ìƒ ë³€ê²½
+			mOwningGridRef->SelectTargetBlock(this); //ëª©í‘œ ë¸”ë¡ ì§€ì •
 			bIsClicked = true;
 		}
 	}
 }
 
-void AA_Star_AlgorithmBlock::Highlight(bool p_bOnOverlap){
-	
+void AA_Star_AlgorithmBlock::Highlight(bool p_bOnOverlap) {
+
 	//Check OwningGrid
-	if (OwningGrid == nullptr) return;
+	if (mOwningGridRef == nullptr)
+		return;
 
-	// ÇÏÀÌ¶óÀÌÆ® È¿°ú Àü °Ë»ç (ÀÌ¹Ì ´­·¯Á®ÀÖ´ÂÁ¦/°æ·Îºí·Ï/º® ¿©ºÎ)
-	if (bIsClicked||bIsPath||bIsWall) return;
+	// í•˜ì´ë¼ì´íŠ¸ íš¨ê³¼ ì „ ê²€ì‚¬ (ì´ë¯¸ ëˆŒëŸ¬ì ¸ìžˆëŠ”ì œ/ê²½ë¡œë¸”ë¡/ë²½ ì—¬ë¶€)
+	if (bIsClicked || bIsPath || bIsWall)
+		return;
 
 
-	//¸¶¿ì½º Ä¿¼­°¡ ¿À¹ö·¦ µÇ¾úÀ»¶§ »ö»ó º¯°æ
-	if (p_bOnOverlap){
-		if (OwningGrid->Cur_StartBlock == nullptr && OwningGrid->Cur_TargetBlock == nullptr) {
-			BlockMesh->SetMaterial(0, MouseOverlapMaterial);
-		}else if (OwningGrid->Cur_TargetBlock == nullptr) {
-			BlockMesh->SetMaterial(0, PinkMaterial);
-		}		
+	//ë§ˆìš°ìŠ¤ ì»¤ì„œê°€ ì˜¤ë²„ëž© ë˜ì—ˆì„ë•Œ ìƒ‰ìƒ ë³€ê²½
+	if (p_bOnOverlap) 
+	{
+		if (mOwningGridRef->curStartBlock == nullptr && mOwningGridRef->curTargetBlock == nullptr) 
+		{
+			mBlockMesh->SetMaterial(0, MouseOverlapMaterial);
+		}
+		else if (mOwningGridRef->curTargetBlock == nullptr) 
+		{
+			mBlockMesh->SetMaterial(0, mPinkMaterial);
+		}
 	}
-	else{
+	else
+	{
 		this->SetBasicMaterial();
 	}
 }
 //////////////////Setter//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/*±âº» »óÅÂ »ö»óº¯°æ*/
-void AA_Star_AlgorithmBlock::SetBasicMaterial(){
-	BlockMesh->SetMaterial(0, BlueMaterial);
+/*ê¸°ë³¸ ìƒíƒœ ìƒ‰ìƒë³€ê²½*/
+void AA_Star_AlgorithmBlock::SetBasicMaterial()
+{
+	mBlockMesh->SetMaterial(0, mBaseMaterial);
 }
 
-//±æ ºí·Ï ¿©ºÎ
-void AA_Star_AlgorithmBlock::SetPathBlock(){
-	//IsPath(ÇöÀç»óÅÂ)°Ë»çÇÏ¿© °æ·Î·Î ÁöÁ¤µÇ¾î ÀÖÁö ¾ÊÀ¸¸é °æ·Î ºí·ÏÀ¸·Î ¼³Á¤
-	if(bIsPath==false){
-		bIsPath=true;
-		BlockMesh->SetMaterial(0, PurpleMaterial);
-		BlockText->SetVisibility(true);
+//ê¸¸ ë¸”ë¡ ì—¬ë¶€
+void AA_Star_AlgorithmBlock::SetPathBlock() 
+{
+	//IsPath(í˜„ìž¬ìƒíƒœ)ê²€ì‚¬í•˜ì—¬ ê²½ë¡œë¡œ ì§€ì •ë˜ì–´ ìžˆì§€ ì•Šìœ¼ë©´ ê²½ë¡œ ë¸”ë¡ìœ¼ë¡œ ì„¤ì •
+	if (bIsPath == false) 
+	{
+		bIsPath = true;
+		mBlockMesh->SetMaterial(0, mPurpleMaterial);
+		mBlockText->SetVisibility(true);
 	}
-	else if(bIsPath) {
+	else if (bIsPath)
+	{
 		bIsPath = false;
 		this->SetBasicMaterial();
-		bIsClicked=false;
-		BlockText->SetVisibility(false);
+		bIsClicked = false;
+		mBlockText->SetVisibility(false);
 	}
 }
-//º® ¿©ºÎ º¯°æ
-void AA_Star_AlgorithmBlock::SetWallBlock(bool IsWall){
-	//ÀÌ¹Ì Å¬¸¯µÇ¾î ÀÖ°Å³ª, °æ·Î·Î µÇ¾îÀÖ´Ù¸é ºÒ°¡´É
-	if(bIsClicked ||bIsPath) return;
 
-	if (IsWall) {
-		BlockMesh->SetMaterial(0, BlackMaterial);
-		bIsWall=true;
-		OwningGrid->SetWalllBlock(this->GetBlockNumber(),true);
+void AA_Star_AlgorithmBlock::SetSearchBlock()
+{
+	mBlockMesh->SetMaterial(0, mSearchMaterial);
+}
+
+//ë²½ ì—¬ë¶€ ë³€ê²½
+void AA_Star_AlgorithmBlock::SetWallBlock(const bool& IsWall) {
+	//ì´ë¯¸ í´ë¦­ë˜ì–´ ìžˆê±°ë‚˜, ê²½ë¡œë¡œ ë˜ì–´ìžˆë‹¤ë©´ ë²½ìœ¼ë¡œ ì„¤ì • ë¶ˆê°€ëŠ¥
+	if (bIsClicked || bIsPath)
+	{
+		return;
 	}
-	else {
+
+	if (IsWall)
+	{
+		mBlockMesh->SetMaterial(0, mBlackMaterial);
+		bIsWall = true;
+		mOwningGridRef->SetWallBlock(this->GetBlockNumber(), true);
+	}
+	else 
+	{
 		this->SetBasicMaterial();
 		bIsWall = false;
-		OwningGrid->SetWalllBlock(this->GetBlockNumber(),false);
+		mOwningGridRef->SetWallBlock(this->GetBlockNumber(), false);
 	}
 }
 
-//ºí·Ï ³Ñ¹ö °ü·Ã//////////////////////////////////////////////////////////////////////////
-
-//ºí·Ï ³Ñ¹ö ÇÒ´ç
-void AA_Star_AlgorithmBlock::SetBlockNumber(const FVector2D p_NewBlockNum){
-	Cur_BlockNumber=p_NewBlockNum; 
-} 
-//ÇØ´ç Text¿¡ ±Û¾¾ ¼³Á¤
-void AA_Star_AlgorithmBlock::SetTextNumber(const FText p_NewNumber){
-	BlockText->SetText(p_NewNumber);
-}
-//±âÅ¸//////////////////////////////////////////////////////////////////////////////////////////
-//ÁÖÀÎ Grid ¼³Á¤
-void AA_Star_AlgorithmBlock::SetOwingGrid(AA_Star_AlgorithmBlockGrid* p_OwningGrid){
-	OwningGrid=p_OwningGrid;
+void AA_Star_AlgorithmBlock::SetBlockNumber(const FVector2D& newNum) 
+{
+	mNumBlock = newNum;
 }
 
-//´­¸®´ÂÁö ¿©ºÎ
-void AA_Star_AlgorithmBlock::SetIsClicked(bool p_bIsClicked){
-	bIsClicked=p_bIsClicked;
+void AA_Star_AlgorithmBlock::SetTextNumber(const FText& newNumText)
+{
+	mBlockText->SetText(newNumText);
+}
+
+
+void AA_Star_AlgorithmBlock::SetOwingGrid(AA_Star_AlgorithmBlockGrid* owningGrid)
+{
+	mOwningGridRef = owningGrid;
+}
+
+void AA_Star_AlgorithmBlock::SetIsClicked(const bool& IsClicked)
+{
+	bIsClicked = IsClicked;
 }
 
