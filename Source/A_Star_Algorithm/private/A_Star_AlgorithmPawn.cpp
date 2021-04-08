@@ -10,7 +10,8 @@
 #include "DrawDebugHelpers.h"
 
 AA_Star_AlgorithmPawn::AA_Star_AlgorithmPawn(const FObjectInitializer& ObjectInitializer) 
-	: Super(ObjectInitializer){
+	: Super(ObjectInitializer)
+{
 	AutoPossessPlayer = EAutoReceiveInput::Player0;
 }
 
@@ -79,7 +80,7 @@ void AA_Star_AlgorithmPawn::TraceForBlock(const FVector& Start, const FVector& E
 	}
 }
 
-//½¬ÇÁÆ®=+¸¶¿ì½º ¿ÞÂÊ¹öÆ° - º® »ý¼º Å¬¸¯
+//ì‰¬í”„íŠ¸=+ë§ˆìš°ìŠ¤ ì™¼ìª½ë²„íŠ¼ - ë²½ ìƒì„± í´ë¦­
 void AA_Star_AlgorithmPawn::TriggerWall_Click(){
 	if (CurrentBlockFocus)	{
 		if(CurrentBlockFocus->GetIsWall())
@@ -89,11 +90,11 @@ void AA_Star_AlgorithmPawn::TriggerWall_Click(){
 	}
 }
 
-//½ºÆäÀÌ½ºÆÄ - °æ·Î ÁöÁ¤ ºí·Ï ÃÊ±âÈ­
+//ìŠ¤íŽ˜ì´ìŠ¤íŒŒ - ê²½ë¡œ ì§€ì • ë¸”ë¡ ì´ˆê¸°í™”
 void AA_Star_AlgorithmPawn::ClickAllClearButton(){
 	if(OwnerGrid==nullptr) return;
 
-	if(OwnerGrid->Cur_StartBlock!=nullptr|| OwnerGrid->Cur_TargetBlock != nullptr)
+	if(OwnerGrid->curStartBlock !=nullptr|| OwnerGrid->curTargetBlock != nullptr)
 		OwnerGrid->AllClearBlock();
 }
 
