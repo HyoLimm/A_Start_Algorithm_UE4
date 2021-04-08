@@ -50,7 +50,7 @@ public://Setter
 	//	}
 	//	return true;
 	//}
-	void SetPosition(const int& x, const& int y) {
+	void SetPosition(const int& x, const int& y) {
 		mNodePosition.X = x;
 		mNodePosition.Y = y;
 	}
