@@ -17,11 +17,7 @@ class AA_Star_AlgorithmBlockGrid : public AActor
 protected:
 	virtual void BeginPlay() override;
 public:
-	UPROPERTY(VisibleAnywhere, Category = "Block")
-	AA_Star_AlgorithmBlock* curStartBlock;
 
-	UPROPERTY(VisibleAnywhere, Category = "Block")
-	AA_Star_AlgorithmBlock* curTargetBlock;
 
 	AA_Star_AlgorithmPawn* PawnOwner;
 public:
@@ -51,9 +47,26 @@ public:
 
 	void SetWallBlock(const FVector2D& targetPosition, const bool& IsWall=false);
 
-
 	void AllClearBlock();
-private:	
+
+	AA_Star_AlgorithmBlock* GetCurStartBlock() const
+	{
+		return mCurStartBlock;
+	}
+
+	AA_Star_AlgorithmBlock* GetCurTargetBlock() const
+	{
+		return mCurTargetBlock;
+	}
+private:	 
+
+	UPROPERTY(VisibleAnywhere, Category = "Block")
+	AA_Star_AlgorithmBlock* mCurStartBlock;
+
+	UPROPERTY(VisibleAnywhere, Category = "Block")
+	AA_Star_AlgorithmBlock* mCurTargetBlock;
+
+
 	void SetRelease();
 
 	TArray<FVector2D>& GetPath_While(const FVector2D& startPosition,const FVector2D& targetPosition);
