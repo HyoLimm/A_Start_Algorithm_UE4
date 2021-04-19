@@ -17,7 +17,7 @@ AA_Star_AlgorithmBlockGrid::AA_Star_AlgorithmBlockGrid()
 	, bAllowDiagonal(false)
 	, bDontCrossCorner(false)
 	, mCurPathCountNum(0)
-	, mMovingTime(0.5f)
+	, mMovingTime(0.1f)
 {
 	dummyRoot = CreateDefaultSubobject<USceneComponent>(TEXT("Dummy0"));
 	RootComponent = dummyRoot;
@@ -86,7 +86,8 @@ TArray<FVector2D> AA_Star_AlgorithmBlockGrid::GetPath_While(const FVector2D& sta
 	this->SetRelease();
 	//StartPosition Push
 
-	Node_Info* startNode = new Node_Info(startPosition, nullptr, 0, targetPosition);
+	Node_Info* startNode = &mNodeArr[static_cast<int>(startPosition.X)][static_cast<int>(startPosition.Y)];
+	
 	mOpenList.Push(startNode);
 
 	while (mOpenList.Num() > 0)
