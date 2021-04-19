@@ -1,11 +1,8 @@
-// Copyright 1998-2019 Epic Games, Inc. All Rights Reserved.
-
 #include "A_Star_AlgorithmBlockGrid.h"
 #include "A_Star_AlgorithmBlock.h"
 #include "Components/TextRenderComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Engine/World.h"
-
 #define LOCTEXT_NAMESPACE "PuzzleBlockGrid"
 
 AA_Star_AlgorithmBlockGrid::AA_Star_AlgorithmBlockGrid()
@@ -31,8 +28,6 @@ AA_Star_AlgorithmBlockGrid::AA_Star_AlgorithmBlockGrid()
 	mDirDiagnolInfo[1] = FVector2D(-1, 1);
 	mDirDiagnolInfo[2] = FVector2D(-1, -1);
 	mDirDiagnolInfo[3] = FVector2D(1, -1);
-
-
 }//end of AA_Star_AlgorithmBlockGrid();
 
 void AA_Star_AlgorithmBlockGrid::BeginPlay()
@@ -81,36 +76,32 @@ void AA_Star_AlgorithmBlockGrid::SelectTargetBlock(AA_Star_AlgorithmBlock * p_Ta
 }//end of SelectTargetBlock
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-TArray<FVector2D> AA_Star_AlgorithmBlockGrid::GetPath_While(const FVector2D& startPosition, const FVector2D& targetPosition)
+TArray<FVector2D>& AA_Star_AlgorithmBlockGrid::GetPath_While(const FVector2D& startPosition, const FVector2D& targetPosition)
 {
 	this->SetRelease();
 	//StartPosition Push
-
 	Node_Info* startNode = &mNodeArr[static_cast<int>(startPosition.X)][static_cast<int>(startPosition.Y)];
 	
 	mOpenList.Push(startNode);
-
 	while (mOpenList.Num() > 0)
 	{
 		mCurrentNode = mOpenList[0];
+		int curNodeSize = mOpenList.Num();
 
-		int openSize = mOpenList.Num();
-		for (int i = 0; i < openSize; i++)
+		for (int i = 0; i < curNodeSize; i++)
 		{
-			int curListF = mOpenList[i]->GetCostF(); //F == TotalValue
-			int curListH = mOpenList[i]->GetCostH(); //H == RemainValue
-
+			const int curNodeF = mOpenList[i]->GetCostF(); //F == TotalValue
+			const int curNodeH = mOpenList[i]->GetCostH(); //H == RemainValue
 			//Find More Little Value
-			if ((curListF <= mCurrentNode->GetCostF()) && (curListH < mCurrentNode->GetCostH()))
+			if ((curNodeF <= mCurrentNode->GetCostF()) && (curNodeF < mCurrentNode->GetCostH()))
 			{
 				mCurrentNode = mOpenList[i];
 				mCurrentNode->SetCurBlock(mOpenList[i]->GetCurBlock());
 			}
 		}
+
 		mOpenList.Remove(mCurrentNode); //Delete OpenList
 		mClosedList.Push(mCurrentNode); //Add ClosedList
-
-		//mCurrentNode->GetCurBlock()->SetSearchBlock();
 
 		const int curX = mCurrentNode->GetPoistion().X;
 		const int curY = mCurrentNode->GetPoistion().Y;
@@ -128,9 +119,6 @@ TArray<FVector2D> AA_Star_AlgorithmBlockGrid::GetPath_While(const FVector2D& sta
 			mFinalPathList.Push(startPosition);
 
 			ReverseArray();
-
-			delete targetNode;
-
 			return mFinalPathList;
 		}
 
@@ -145,7 +133,6 @@ TArray<FVector2D> AA_Star_AlgorithmBlockGrid::GetPath_While(const FVector2D& sta
 				OpenListAdd(nextX, nextY);
 			}
 		}
-
 		//Up Down Left Right
 		for (int i = 0; i < 4; i++)
 		{
@@ -153,13 +140,10 @@ TArray<FVector2D> AA_Star_AlgorithmBlockGrid::GetPath_While(const FVector2D& sta
 			const int nextY = curY + mDirInfo[i].Y;
 			OpenListAdd(nextX, nextY);
 		}
-
-
 	}//end of while
 
 	return mFinalPathList;
 }//end of GetPath_While
-
 
 bool AA_Star_AlgorithmBlockGrid::GetArriveTarget(const FVector2D& startPosition, const FVector2D& targetPosition) const
 {
@@ -168,6 +152,7 @@ bool AA_Star_AlgorithmBlockGrid::GetArriveTarget(const FVector2D& startPosition,
 
 void AA_Star_AlgorithmBlockGrid::OpenListAdd(const int& currentX, const int& currentY)
 {
+	//Check Out Of Range
 	if (!CheckException(FVector2D(currentX, currentY)))
 	{
 		return;
@@ -190,17 +175,16 @@ void AA_Star_AlgorithmBlockGrid::OpenListAdd(const int& currentX, const int& cur
 	}
 
 	Node_Info* neighborNode = &mNodeArr[currentX][currentY];
-	
-	//neighborNode->GetCurBlock()->SetSearchBlock();
 
 	//10 or 14
 	int moveAddtive = (mCurrentNode->GetX() - currentX) == 0 || (mCurrentNode->GetY() - currentY) == 0 ? 10 : 14;
-	int moveCost = mCurrentNode->GetCostG() + moveAddtive;
 
+	//Calc CostG
+	int curNodeG = mCurrentNode->GetCostG() + moveAddtive;
 
-	if (moveCost < neighborNode->GetCostG() || !mOpenList.Contains(neighborNode))
+	if (curNodeG < neighborNode->GetCostG() || !mOpenList.Contains(neighborNode))
 	{
-		neighborNode->SetCostG(moveCost);
+		neighborNode->SetCostG(curNodeG);
 		neighborNode->SetCostH(curTargetBlock->GetBlockNumber());
 		neighborNode->SetParentNode(mCurrentNode);
 		mOpenList.Push(neighborNode);
@@ -220,10 +204,8 @@ bool AA_Star_AlgorithmBlockGrid::CheckException(const FVector2D& targetPosition)
 	{
 		return false; //already Valid or Is Wall
 	}
-
 	return true;
 }//end of CheckException
-
 
 void AA_Star_AlgorithmBlockGrid::SetRelease()
 {
@@ -236,8 +218,6 @@ void AA_Star_AlgorithmBlockGrid::SetRelease()
 	if (mFinalPathList.Num())
 		mFinalPathList.Empty();
 }//end of SetRelase
-
-
 
 void AA_Star_AlgorithmBlockGrid::ReverseArray()
 {
@@ -260,28 +240,22 @@ void AA_Star_AlgorithmBlockGrid::SetWallBlock(const FVector2D& targetPosition,co
 	mNodeArr[x][y].SetWall(IsWall);
 }//end of SetWallBlock
 
-
 void AA_Star_AlgorithmBlockGrid::AllClearBlock()
 {
-
 	const int SIZE = curPathBlocks.Num();
 
 	for (int i = 0; i < SIZE; i++)
 	{
-		curPathBlocks[i]->SetPathBlock();
-	
+		curPathBlocks[i]->SetPathBlock();	
 	}
 
 	curPathBlocks.Empty();
-
-
 	if (curStartBlock != nullptr)
 	{ 
 		curStartBlock->SetBasicMaterial();
 		curStartBlock->SetIsClicked(false);
 		curStartBlock = nullptr;
 	}
-
 	if (curTargetBlock != nullptr)
 	{ 
 		curTargetBlock->SetBasicMaterial();
@@ -289,7 +263,6 @@ void AA_Star_AlgorithmBlockGrid::AllClearBlock()
 		curTargetBlock = nullptr;
 	}
 }
-
 
 void AA_Star_AlgorithmBlockGrid::DrawPath(const FVector2D& drawPosition,const int& blockNumber)
 {
@@ -300,10 +273,8 @@ void AA_Star_AlgorithmBlockGrid::DrawPath(const FVector2D& drawPosition,const in
 
 	mNodeArr[x][y].GetCurBlock()->SetTextNumber(FText::FromString(FString::FromInt(blockNumber)));
 
-
 	curPathBlocks.Push(mNodeArr[x][y].GetCurBlock());
 }
-
 
 void AA_Star_AlgorithmBlockGrid::SpawnBlocks()
 {
