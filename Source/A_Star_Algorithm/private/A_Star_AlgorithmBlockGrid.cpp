@@ -6,13 +6,13 @@
 #define LOCTEXT_NAMESPACE "PuzzleBlockGrid"
 
 AA_Star_AlgorithmBlockGrid::AA_Star_AlgorithmBlockGrid()
-	: curStartBlock(nullptr)
-	, curTargetBlock(nullptr)
-	, PawnOwner(nullptr)
+	: PawnOwner(nullptr)
 	, GridSize(20)
 	, BlockSpacing(300.f)
 	, bAllowDiagonal(false)
 	, bDontCrossCorner(false)
+	, mCurStartBlock(nullptr)
+	, mCurTargetBlock(nullptr)
 	, mCurPathCountNum(0)
 	, mMovingTime(0.1f)
 {
@@ -39,29 +39,29 @@ void AA_Star_AlgorithmBlockGrid::BeginPlay()
 
 void AA_Star_AlgorithmBlockGrid::SelectStartBlock(AA_Star_AlgorithmBlock * p_StartingBlock)
 {	//Check StartBlock
-	if (curStartBlock != nullptr)
+	if (mCurStartBlock != nullptr)
 	{
 		return;
 	}
-	curStartBlock = p_StartingBlock;
+	mCurStartBlock = p_StartingBlock;
 }//End of SelectStartBlock
 
 
 void AA_Star_AlgorithmBlockGrid::SelectTargetBlock(AA_Star_AlgorithmBlock * p_TargetingBlock)
 {
-	if (curTargetBlock != nullptr) //Check Already TargetBlock
+	if (mCurTargetBlock != nullptr) //Check Already TargetBlock
 	{
 		return;
 	}
 
-	curTargetBlock = p_TargetingBlock;
+	mCurTargetBlock = p_TargetingBlock;
 
-	if (curStartBlock == nullptr || curTargetBlock == nullptr)
+	if (mCurStartBlock == nullptr || mCurTargetBlock == nullptr)
 	{
 		return;
 	}
 
-	mCharacterPath = GetPath_While(curStartBlock->GetBlockNumber(), curTargetBlock->GetBlockNumber());
+	mCharacterPath = GetPath_While(mCurStartBlock->GetBlockNumber(), mCurTargetBlock->GetBlockNumber());
 
 	//Not Found Path
 	if (mCharacterPath.Num() <= 0)
@@ -87,7 +87,6 @@ TArray<FVector2D>& AA_Star_AlgorithmBlockGrid::GetPath_While(const FVector2D& st
 	{
 		mCurrentNode = mOpenList[0];
 		int curNodeSize = mOpenList.Num();
-
 		for (int i = 0; i < curNodeSize; i++)
 		{
 			const int curNodeF = mOpenList[i]->GetCostF(); //F == TotalValue
@@ -174,6 +173,8 @@ void AA_Star_AlgorithmBlockGrid::OpenListAdd(const int& currentX, const int& cur
 		}
 	}
 
+
+
 	//10 or 14
 	int moveAddtive = (mCurrentNode->GetX() - currentX) == 0 || (mCurrentNode->GetY() - currentY) == 0 ? 10 : 14;
 
@@ -185,7 +186,7 @@ void AA_Star_AlgorithmBlockGrid::OpenListAdd(const int& currentX, const int& cur
 	if (newCostG < neighborNode->GetCostG() || !mOpenList.Contains(neighborNode))
 	{
 		neighborNode->SetCostG(newCostG);
-		neighborNode->SetCostH(curTargetBlock->GetBlockNumber());
+		neighborNode->SetCostH(mCurTargetBlock->GetBlockNumber());
 		neighborNode->SetParentNode(mCurrentNode);
 		mOpenList.Push(neighborNode);
 	}
@@ -250,17 +251,17 @@ void AA_Star_AlgorithmBlockGrid::AllClearBlock()
 	}
 
 	curPathBlocks.Empty();
-	if (curStartBlock != nullptr)
+	if (mCurStartBlock != nullptr)
 	{ 
-		curStartBlock->SetBasicMaterial();
-		curStartBlock->SetIsClicked(false);
-		curStartBlock = nullptr;
+		mCurStartBlock->SetBasicMaterial();
+		mCurStartBlock->SetIsClicked(false);
+		mCurStartBlock = nullptr;
 	}
-	if (curTargetBlock != nullptr)
+	if (mCurTargetBlock != nullptr)
 	{ 
-		curTargetBlock->SetBasicMaterial();
-		curTargetBlock->SetIsClicked(false);
-		curTargetBlock = nullptr;
+		mCurTargetBlock->SetBasicMaterial();
+		mCurTargetBlock->SetIsClicked(false);
+		mCurTargetBlock = nullptr;
 	}
 }
 
