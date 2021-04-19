@@ -80,7 +80,7 @@ void AA_Star_AlgorithmPawn::TraceForBlock(const FVector& Start, const FVector& E
 	}
 }
 
-//쉬프트=+마우스 왼쪽버튼 - 벽 생성 클릭
+
 void AA_Star_AlgorithmPawn::TriggerWall_Click(){
 	if (CurrentBlockFocus)	{
 		if(CurrentBlockFocus->GetIsWall())
@@ -90,11 +90,11 @@ void AA_Star_AlgorithmPawn::TriggerWall_Click(){
 	}
 }
 
-//스페이스파 - 경로 지정 블록 초기화
+
 void AA_Star_AlgorithmPawn::ClickAllClearButton(){
 	if(OwnerGrid==nullptr) return;
 
-	if(OwnerGrid->curStartBlock !=nullptr|| OwnerGrid->curTargetBlock != nullptr)
+	if(OwnerGrid->GetCurStartBlock() !=nullptr|| OwnerGrid->GetCurTargetBlock() != nullptr)
 		OwnerGrid->AllClearBlock();
 }
 
