@@ -174,17 +174,17 @@ void AA_Star_AlgorithmBlockGrid::OpenListAdd(const int& currentX, const int& cur
 		}
 	}
 
-	Node_Info* neighborNode = &mNodeArr[currentX][currentY];
-
 	//10 or 14
 	int moveAddtive = (mCurrentNode->GetX() - currentX) == 0 || (mCurrentNode->GetY() - currentY) == 0 ? 10 : 14;
 
 	//Calc CostG
-	int curNodeG = mCurrentNode->GetCostG() + moveAddtive;
+	int newCostG = mCurrentNode->GetCostG() + moveAddtive;
 
-	if (curNodeG < neighborNode->GetCostG() || !mOpenList.Contains(neighborNode))
+	Node_Info* neighborNode = &mNodeArr[currentX][currentY];
+
+	if (newCostG < neighborNode->GetCostG() || !mOpenList.Contains(neighborNode))
 	{
-		neighborNode->SetCostG(curNodeG);
+		neighborNode->SetCostG(newCostG);
 		neighborNode->SetCostH(curTargetBlock->GetBlockNumber());
 		neighborNode->SetParentNode(mCurrentNode);
 		mOpenList.Push(neighborNode);
