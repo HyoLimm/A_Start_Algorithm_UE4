@@ -3,12 +3,15 @@
 class Node_Info {
 
 public:
-	Node_Info()
-		: mNodePosition(FVector2D(0, 0))
-		, mParentNode(nullptr)
-		, G(0)
-		, bIsWall(false)
-	{}
+    Node_Info()
+            : m_CurBlock(nullptr)
+            , mNodePosition(FVector2D(0, 0))
+            , mParentNode(nullptr)
+            , H(0)
+            , G(0)
+            , F(0)
+            , bIsWall(false)
+    {}
 	Node_Info(FVector2D curPosition, Node_Info* parentPtr, int newG, FVector2D newH, bool IsWall = false)
 		: mNodePosition(curPosition)
 		, mParentNode(parentPtr)
@@ -59,7 +62,15 @@ public://Setter
 	void SetWall(const int& _isWall) { bIsWall = _isWall; }
 
 
-	void SetCostG(const int& _G) { G = _G; }
+    void ResetCosts()
+    {
+            G = 0;
+            H = 0;
+            F = 0;
+            mParentNode = nullptr;
+    }
+
+    void SetCostG(const int& _G) { G = _G; }
 	void SetCostF() { F = G + H; }
 	void SetCostH(const FVector2D& Target)
 	{

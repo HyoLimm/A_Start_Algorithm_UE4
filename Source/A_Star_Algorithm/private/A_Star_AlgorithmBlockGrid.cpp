@@ -210,14 +210,22 @@ bool AA_Star_AlgorithmBlockGrid::CheckException(const FVector2D& targetPosition)
 
 void AA_Star_AlgorithmBlockGrid::SetRelease()
 {
-	if (mOpenList.Num())
-		mOpenList.Empty();
+        if (mOpenList.Num())
+                mOpenList.Empty();
 
-	if (mClosedList.Num())
-		mClosedList.Empty();
+        if (mClosedList.Num())
+                mClosedList.Empty();
 
-	if (mFinalPathList.Num())
-		mFinalPathList.Empty();
+        if (mFinalPathList.Num())
+                mFinalPathList.Empty();
+
+        for (int32 X = 0; X < GridSize; ++X)
+        {
+                for (int32 Y = 0; Y < GridSize; ++Y)
+                {
+                        mNodeArr[X][Y].ResetCosts();
+                }
+        }
 }//end of SetRelase
 
 void AA_Star_AlgorithmBlockGrid::ReverseArray()
